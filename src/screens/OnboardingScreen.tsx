@@ -141,7 +141,7 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
     title: 'Kayıp Anında Tüm\nGüvenlik Kalkanı Açılır',
     subtitle:
       'Uygulamadan Kayıp Modunu açın; künye okutulduğu anda telefonunuz acil durum alarmı verir, haritada rotayı çizer ve bulucuya talimatları gösterir.',
-    photo: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5455?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Max • Alman Kurdu',
     petBadgeStatus: 'Kayıp Kalkanı Aktif',
     floatingPill: {
