@@ -22,6 +22,9 @@
       },
       "package": "com.virelon.findmypaw",
       "targetSdkVersion": 36
-    }
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }

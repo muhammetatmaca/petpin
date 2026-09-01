@@ -41,6 +41,7 @@ import {
   FolderArchive,
 } from 'lucide-react-native';
 import { usePet } from '../context/PetContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import {
   saveQrImageToGallery,
   printQrCollarTag,
@@ -54,6 +55,7 @@ interface TagScreenProps {
 
 export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
   const { profile, updateProfile, regenerateTagId, pairPhysicalTag } = usePet();
+  const { t } = useTranslation();
   const [showPhoneToFinder, setShowPhoneToFinder] = useState(true);
   const [showWhatsAppToFinder, setShowWhatsAppToFinder] = useState(true);
   const [showMedicalNotes, setShowMedicalNotes] = useState(true);
@@ -144,8 +146,8 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
       {/* Top Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Akıllı QR Künyem</Text>
-          <Text style={styles.headerSubtitle}>{profile.petName}’nin Boyun Tasması</Text>
+          <Text style={styles.headerTitle}>{t('tags_title')}</Text>
+          <Text style={styles.headerSubtitle}>{profile.petName} • {t('tags_subtitle')}</Text>
         </View>
         <TouchableOpacity
           style={styles.headerActionBtn}
@@ -165,9 +167,9 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
           <View style={styles.tagTopBadgeRow}>
             <View style={styles.nfcBadge}>
               <Sparkles size={12} color={COLORS.emerald} style={{ marginRight: 4 }} />
-              <Text style={styles.nfcBadgeText}>BENZERSİZ QR + NFC</Text>
+              <Text style={styles.nfcBadgeText}>PETPIN SMART QR</Text>
             </View>
-            <Text style={styles.noBatteryText}>Pil Gerektirmez • Pasif</Text>
+            <Text style={styles.noBatteryText}>{t('home_battery_passive')}</Text>
           </View>
 
           {/* High-Resolution Dynamic QR Graphic */}
@@ -200,7 +202,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
                   copied && { color: COLORS.emerald },
                 ]}
               >
-                {copied ? 'Kopyalandı' : 'Kopyala'}
+                {copied ? t('copied') : t('tags_qr_share')}
               </Text>
             </View>
           </TouchableOpacity>
@@ -222,7 +224,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
               onPress={handlePrintTag}
             >
               <Printer size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-              <Text style={styles.quickExportBtnText}>Tasmayı Yazdır / PDF</Text>
+              <Text style={styles.quickExportBtnText}>{t('tags_export_pdf')}</Text>
             </TouchableOpacity>
           </View>
 

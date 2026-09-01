@@ -13,6 +13,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { Map, User, QrCode, Bell } from 'lucide-react-native';
+import { LanguageProvider, useTranslation } from './src/i18n/LanguageContext';
 import { PetProvider, usePet } from './src/context/PetContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -25,6 +26,7 @@ const ONBOARDING_KEY = '@petpin_onboarding_completed_v2';
 
 function MainApp() {
   const { activeScanAlert } = usePet();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'map' | 'tag' | 'alert' | 'profile'>('map');
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const insets = useSafeAreaInsets();
@@ -94,7 +96,7 @@ function MainApp() {
         )}
       </View>
 
-      {/* Global Pro Max Floating Glass Navigation Bar for Pet Owner */}
+      {/* Global Floating Glass Navigation Bar with 20-Language Support */}
       <View style={[styles.bottomNavContainer, { bottom: bottomNavOffset }]}>
         <View style={styles.bottomNavBar}>
           {/* Tab 1: Map Dashboard */}
@@ -119,8 +121,9 @@ function MainApp() {
                 styles.tabLabel,
                 activeTab === 'map' && styles.tabLabelActive,
               ]}
+              numberOfLines={1}
             >
-              Harita
+              {t('tab_map')}
             </Text>
           </TouchableOpacity>
 
@@ -146,8 +149,9 @@ function MainApp() {
                 styles.tabLabel,
                 activeTab === 'tag' && styles.tabLabelActive,
               ]}
+              numberOfLines={1}
             >
-              Künyem
+              {t('tab_tags')}
             </Text>
           </TouchableOpacity>
 
@@ -178,8 +182,9 @@ function MainApp() {
                 styles.tabLabel,
                 activeTab === 'alert' && styles.tabLabelActiveAlert,
               ]}
+              numberOfLines={1}
             >
-              Bildirimler
+              {t('tab_alerts')}
             </Text>
           </TouchableOpacity>
 
@@ -207,8 +212,9 @@ function MainApp() {
                 styles.tabLabel,
                 activeTab === 'profile' && styles.tabLabelActive,
               ]}
+              numberOfLines={1}
             >
-              Profil
+              {t('tab_profile')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -220,9 +226,11 @@ function MainApp() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <PetProvider>
-        <MainApp />
-      </PetProvider>
+      <LanguageProvider>
+        <PetProvider>
+          <MainApp />
+        </PetProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }
@@ -240,37 +248,38 @@ const styles = StyleSheet.create({
     left: 18,
     right: 18,
     alignItems: 'center',
+    zIndex: 999,
   },
   bottomNavBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    width: '100%',
+    justifyContent: 'space-between',
     backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderRadius: 36,
+    borderRadius: 28,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.9)',
+    borderColor: 'rgba(15, 76, 92, 0.08)',
     ...SHADOWS.card,
   },
   tabItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
-    minWidth: 64,
   },
   tabIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginBottom: 3,
     position: 'relative',
   },
   tabIconBadgeActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#0F4C5C',
     ...SHADOWS.glowTeal,
   },
   tabIconBadgeActiveAlert: {
@@ -279,26 +288,27 @@ const styles = StyleSheet.create({
   },
   alertDot: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 6,
+    right: 6,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
     backgroundColor: COLORS.coral,
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10.5,
+    fontWeight: '700',
     color: COLORS.textSecondary,
+    letterSpacing: -0.2,
   },
   tabLabelActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: '#0F4C5C',
+    fontWeight: '800',
   },
   tabLabelActiveAlert: {
     color: COLORS.coral,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

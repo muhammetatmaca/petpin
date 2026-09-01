@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { InteractiveMap } from '../components/InteractiveMap';
 import { usePet } from '../context/PetContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import { COLORS, SHADOWS } from '../theme/colors';
 
 interface AlertScreenProps {
@@ -33,6 +34,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
   onNavigatePress,
 }) => {
   const { profile, activeScanAlert, clearActiveScanAlert } = usePet();
+  const { t } = useTranslation();
 
   const handleCallFinder = () => {
     if (profile.ownerPhone) {
@@ -61,7 +63,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
         >
           <ChevronLeft size={24} color={COLORS.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tarama Bildirimleri</Text>
+        <Text style={styles.headerTitle}>{t('alert_title')}</Text>
         {activeScanAlert ? (
           <TouchableOpacity
             style={styles.backButton}
@@ -87,14 +89,14 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
               <View style={styles.emptyPulseRing} />
             </View>
 
-            <Text style={styles.emptyTitle}>Henüz Tarama Bildirimi Yok</Text>
+            <Text style={styles.emptyTitle}>{t('alert_no_notifications')}</Text>
             <Text style={styles.emptySubtitle}>
-              {profile.petName} güvende! Tasmasındaki QR künye birisi tarafından telefon kamerasıyla okutulduğunda anlık GPS konumu ve bildirim anında buraya düşecektir.
+              {profile.petName} {t('home_status_safe')}! {t('home_live_radar')}
             </Text>
 
             <View style={styles.statusLivePill}>
               <View style={styles.statusLiveDot} />
-              <Text style={styles.statusLiveText}>QR Künye Dinleniyor • 7/24 Aktif</Text>
+              <Text style={styles.statusLiveText}>{t('home_battery_passive')}</Text>
             </View>
 
             {/* How notifications work card */}

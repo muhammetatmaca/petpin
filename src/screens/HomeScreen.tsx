@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native';
 import { InteractiveMap } from '../components/InteractiveMap';
 import { usePet } from '../context/PetContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import { COLORS, SHADOWS } from '../theme/colors';
 
 interface HomeScreenProps {
@@ -40,9 +41,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onAlertPress,
 }) => {
   const { profile, activeScanAlert } = usePet();
+  const { t } = useTranslation();
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
   const [loadingLocation, setLoadingLocation] = useState(true);
-  const [currentAddress, setCurrentAddress] = useState<string>('Konum alınıyor...');
+  const [currentAddress, setCurrentAddress] = useState<string>(t('loading'));
   const [petLocation, setPetLocation] = useState({
     latitude: 40.9876,
     longitude: 29.0345,
@@ -249,10 +251,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   ]}
                 >
                   {activeScanAlert
-                    ? '📍 Künye Okutuldu!'
+                    ? `📍 ${t('alert_title')}`
                     : profile.isLostMode
-                    ? 'Kayıp Modu Aktif'
-                    : 'Güvende'}
+                    ? t('home_status_lost')
+                    : t('home_status_safe')}
                 </Text>
               </View>
             </View>
@@ -276,13 +278,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <>
                     <Clock size={12} color={COLORS.coral} />
                     <Text style={[styles.tagPillText, { color: COLORS.coral }]}>
-                      Okutulma: {activeScanAlert.timeFormatted}
+                      {t('alert_scanned_at')} {activeScanAlert.timeFormatted}
                     </Text>
                   </>
                 ) : (
                   <>
                     <ShieldCheck size={12} color={COLORS.primary} />
-                    <Text style={styles.tagPillText}>QR Künye Aktif • Dinleniyor</Text>
+                    <Text style={styles.tagPillText}>{t('home_battery_passive')} • {t('home_live_radar')}</Text>
                   </>
                 )}
               </View>
@@ -305,8 +307,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
           <Text style={[styles.infoBannerText, activeScanAlert && { color: COLORS.coral, fontWeight: '700' }]}>
             {activeScanAlert
-              ? 'Bulan kişinin konumunu ve detaylarını gör ➔'
-              : 'Künyem: Milo’nun QR kodunu ve bulan kişinin ekranını yönet'}
+              ? `${t('alert_open_map')} ➔`
+              : `${t('tags_title')}: ${t('tags_subtitle')}`}
           </Text>
           <Sparkles size={14} color={activeScanAlert ? COLORS.coral : COLORS.emerald} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
