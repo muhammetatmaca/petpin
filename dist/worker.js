@@ -1,6 +1,6 @@
 /**
  * PetPin Cloudflare Worker & API Gateway
- * Handles Real-Time Scan Telemetry, Push Notifications, and Static Assets
+ * Handles Real-Time Scan Telemetry & Global Broadcast
  */
 
 // In-memory telemetry cache on Edge (persists active scans)
@@ -31,6 +31,8 @@ export default {
           const { tag_id, push_token } = data;
           if (tag_id && push_token) {
             pushTokenStore.set(tag_id, push_token);
+            pushTokenStore.set(tag_id.toUpperCase(), push_token);
+            pushTokenStore.set(tag_id.toLowerCase(), push_token);
           }
           return new Response(
             JSON.stringify({ success: true, message: 'Push token kaydedildi', tag_id }),
@@ -62,11 +64,11 @@ export default {
       if (request.method === 'POST') {
         try {
           const data = await request.json();
-          const tag_id = data.tag_id || 'PETPIN-TR-DEFAULT';
+          const rawTagId = data.tag_id || 'PETPIN-TR-DEFAULT';
 
           const scanRecord = {
             id: Date.now().toString(),
-            tag_id: tag_id,
+            tag_id: rawTagId,
             pet_name: data.pet_name || 'Milo',
             latitude: Number(data.latitude) || 40.9876,
             longitude: Number(data.longitude) || 29.0345,
@@ -84,10 +86,13 @@ export default {
             }),
           };
 
-          // Store latest scan
-          scanStore.set(tag_id, scanRecord);
+          // Store across all key variants and global broadcast
+          scanStore.set(rawTagId, scanRecord);
+          scanStore.set(rawTagId.toUpperCase(), scanRecord);
+          scanStore.set(rawTagId.toLowerCase(), scanRecord);
+          scanStore.set('GLOBAL_LATEST', scanRecord);
 
-          console.log(`[Scan Saved] ${tag_id}: ${scanRecord.address}`);
+          console.log(`[Scan Saved] ${rawTagId}: ${scanRecord.address}`);
 
           return new Response(
             JSON.stringify({
@@ -120,7 +125,18 @@ export default {
 
       if (request.method === 'GET') {
         const tagId = url.searchParams.get('tag_id') || url.searchParams.get('id');
-        const scan = tagId ? scanStore.get(tagId) : null;
+        let scan = null;
+
+        if (tagId) {
+          scan =
+            scanStore.get(tagId) ||
+            scanStore.get(tagId.toUpperCase()) ||
+            scanStore.get(tagId.toLowerCase()) ||
+            scanStore.get('GLOBAL_LATEST') ||
+            null;
+        } else {
+          scan = scanStore.get('GLOBAL_LATEST') || null;
+        }
 
         return new Response(
           JSON.stringify({
