@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  Platform,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -23,9 +22,8 @@ interface CosmicBackgroundProps {
 }
 
 /**
- * Official Originkit Cosmic BG — WebGL Rosette Nebula Shader Engine
- * Downloaded via: npx originkit@latest add cosmic-bg --prompt
- * Optimized for buttery-smooth 60 FPS mobile performance
+ * 100% Full-Detail Originkit Cosmic BG — WebGL Rosette Nebula Shader Engine
+ * Full 7-octave FBM fractal noise, highp float precision, and maximum gas filaments
  */
 export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
   children,
@@ -63,7 +61,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
         <body>
           <canvas id="glCanvas"></canvas>
           <script>
-            // Originkit Official WebGL GLSL Shader Code
+            // Official Originkit WebGL GLSL Shader Code (100% Full 7-Octave Detail)
             const VERT = \`
               attribute vec4 a_pos;
               void main() {
@@ -72,7 +70,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
             \`;
 
             const FRAG = \`
-              precision mediump float;
+              precision highp float;
               uniform float u_time;
               uniform vec2 u_res;
               uniform vec3 u_core;
@@ -99,9 +97,10 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
                            mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
               }
 
+              // Full 7-Octave Fractal Brownian Motion (Maximum Filament Detail)
               float fbm(vec2 p) {
                 float v = 0.0, a = 0.5;
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 7; i++) {
                   v += a * noise(p); p *= rot(0.5); p *= 2.1; a *= 0.5;
                 }
                 return v;
@@ -156,11 +155,10 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
 
             const canvas = document.getElementById('glCanvas');
             const gl = canvas.getContext('webgl', {
-              antialias: false,
+              antialias: true,
               alpha: true,
               depth: false,
-              premultipliedAlpha: true,
-              powerPreference: 'high-performance'
+              premultipliedAlpha: true
             });
 
             function compile(gl, type, src) {
@@ -200,8 +198,9 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
 
             function resize() {
-              const w = window.innerWidth;
-              const h = window.innerHeight;
+              const dpr = Math.min(2, window.devicePixelRatio || 1);
+              const w = Math.round(window.innerWidth * dpr);
+              const h = Math.round(window.innerHeight * dpr);
               if (canvas.width !== w || canvas.height !== h) {
                 canvas.width = w;
                 canvas.height = h;
@@ -254,7 +253,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Official Originkit WebGL GLSL Hardware Accelerated Layer */}
+      {/* 100% Full-Detail Originkit WebGL GLSL Shader Layer */}
       <View style={styles.webglLayer} pointerEvents="none">
         <WebView
           originWhitelist={['*']}
