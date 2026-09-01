@@ -10,6 +10,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CosmicBackgroundProps {
   children?: React.ReactNode;
+  theme?: 'pastel' | 'dark';
   core?: boolean;
   coreColor?: string;
   midColor?: string;
@@ -24,21 +25,24 @@ interface CosmicBackgroundProps {
 /**
  * Official Originkit Cosmic BG (src/components/originkit/ui/cosmic-bg.tsx)
  * Mobile-Optimized WebGL Rosette Nebula Engine
- * - 0.5x hardware viewport scaling with bilinear stretch (smooth 60 FPS on any phone)
- * - Zero CPU overhead, touch-passthrough pointerEvents="none"
+ * Supports both Pastel Aesthetic and Dark Cosmic themes with 60 FPS mobile performance
  */
 export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
   children,
+  theme = 'pastel',
   core = true,
-  coreColor = '#6823C3',
-  midColor = '#007BFF',
-  accentColor = '#9900FF',
-  outerColor = '#F9F9F9',
+  coreColor = theme === 'pastel' ? '#7C3AED' : '#6823C3',
+  midColor = theme === 'pastel' ? '#059669' : '#007BFF',
+  accentColor = theme === 'pastel' ? '#E11D48' : '#9900FF',
+  outerColor = theme === 'pastel' ? '#0284C7' : '#F9F9F9',
   detail = 20,
-  brightness = 32,
-  speed = 30,
-  rotation = 15,
+  brightness = theme === 'pastel' ? 26 : 32,
+  speed = 26,
+  rotation = 14,
 }) => {
+  const isPastel = theme === 'pastel';
+  const bgColor = isPastel ? '#FAF7F2' : '#040914';
+
   const htmlContent = useMemo(() => {
     return `
       <!DOCTYPE html>
@@ -51,7 +55,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
               width: 100%;
               height: 100%;
               overflow: hidden;
-              background-color: #040914;
+              background-color: ${bgColor};
             }
             #glCanvas {
               width: 100%;
@@ -201,7 +205,6 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
             gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
 
-            // 🚀 Golden Mobile Optimization: Render at 0.55x internal buffer for smooth 60 FPS
             function resize() {
               const scale = 0.55;
               const w = Math.round(window.innerWidth * scale);
@@ -259,16 +262,16 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
         </body>
       </html>
     `;
-  }, [core, coreColor, midColor, accentColor, outerColor, detail, brightness, speed, rotation]);
+  }, [bgColor, core, coreColor, midColor, accentColor, outerColor, detail, brightness, speed, rotation]);
 
   return (
-    <View style={styles.container}>
-      {/* Official Originkit WebGL GLSL Layer (60 FPS Optimized) */}
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+      {/* Official Originkit WebGL Layer */}
       <View style={styles.webglLayer} pointerEvents="none">
         <WebView
           originWhitelist={['*']}
           source={{ html: htmlContent }}
-          style={styles.webView}
+          style={[styles.webView, { backgroundColor: bgColor }]}
           scrollEnabled={false}
           bounces={false}
           overScrollMode="never"
@@ -291,7 +294,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#040914',
     overflow: 'hidden',
   },
   webglLayer: {
@@ -303,7 +305,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   webView: {
-    backgroundColor: '#040914',
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
   },

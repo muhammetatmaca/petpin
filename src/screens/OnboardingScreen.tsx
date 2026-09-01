@@ -22,18 +22,18 @@ import {
   ArrowRight,
   Check,
   QrCode,
+  Tag,
   Radio,
-  Clock,
-  Heart,
-  MessageCircle,
+  Lock,
 } from 'lucide-react-native';
-import { PastelBackground } from '../components/PastelBackground';
+import { CosmicBackground } from '../components/CosmicBackground';
 import { SHADOWS } from '../theme/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface RevolutOnboardingSlide {
   id: string;
+  tagEmoji: string;
   tag: string;
   tagBg: string;
   tagBorder: string;
@@ -43,13 +43,14 @@ interface RevolutOnboardingSlide {
   subtitle: string;
   photo: string;
   petBadgeName: string;
-  petBadgeStatus: string;
+  collarSerial: string;
   floatingPill: {
     icon: any;
-    text: string;
-    subtext: string;
+    title: string;
+    description: string;
     iconBg: string;
     iconColor: string;
+    badgeText: string;
   };
   features: string[];
 }
@@ -57,7 +58,8 @@ interface RevolutOnboardingSlide {
 const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   {
     id: '1',
-    tag: 'AKILLI KÜNYE SİSTEMİ',
+    tagEmoji: '🏷️',
+    tag: 'AKILLI QR KÜNYE',
     tagBg: '#DCFCE7',
     tagBorder: '#86EFAC',
     tagTextColor: '#047857',
@@ -67,13 +69,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'PetPin akıllı QR künyesi ile arama karmaşası biter. Telefon kamerasıyla okutan herkes tek dokunuşla size ulaşır.',
     photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Milo • Golden Retriever',
-    petBadgeStatus: 'Künye 7/24 Aktif',
+    collarSerial: 'TAG: #PETPIN-01',
     floatingPill: {
       icon: QrCode,
-      text: 'Akıllı QR Künye',
-      subtext: 'Kamerayla anında tanır',
+      title: 'Akıllı QR Künye',
+      description: 'Telefon kamerasıyla anında tanır',
       iconBg: '#DCFCE7',
       iconColor: '#059669',
+      badgeText: '7/24 Aktif',
     },
     features: [
       'Uygulamasız doğrudan tanıma',
@@ -83,6 +86,7 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   },
   {
     id: '2',
+    tagEmoji: '⚡',
     tag: 'SIFIR ŞARJ & PİL',
     tagBg: '#FEF3C7',
     tagBorder: '#FDE68A',
@@ -93,13 +97,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'Geleneksel ağır GPS tasmaların aksine pil veya şarj istemez. Kediniz ve köpeğiniz için tüy kadar hafif ve %100 su geçirmezdir.',
     photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Luna • British Shorthair',
-    petBadgeStatus: '%100 Pasif Güvenlik',
+    collarSerial: 'TAG: #PETPIN-02',
     floatingPill: {
       icon: Zap,
-      text: 'Sıfır Pil İhtiyacı',
-      subtext: 'Ömür boyu kesintisiz',
+      title: 'Sıfır Pil İhtiyacı',
+      description: 'Ömür boyu kesintisiz koruma',
       iconBg: '#FEF3C7',
       iconColor: '#D97706',
+      badgeText: '%100 Pasif',
     },
     features: [
       'Günde bir şarj etme derdine son',
@@ -109,6 +114,7 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   },
   {
     id: '3',
+    tagEmoji: '📍',
     tag: 'CANLI GPS TELEMETRİ',
     tagBg: '#E0F2FE',
     tagBorder: '#BAE6FD',
@@ -119,13 +125,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'Dostunuzu bulan kişi künyeyi okuttuğu an, izin verdiği canlı GPS koordinatları ve tam sokak adresi telefonunuza bildirim olarak düşer.',
     photo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Baron • Fransız Bulldog',
-    petBadgeStatus: 'GPS Radarı Hazır',
+    collarSerial: 'TAG: #PETPIN-03',
     floatingPill: {
       icon: MapPin,
-      text: 'Canlı Konum Bildirimi',
-      subtext: '±3m yüksek hassasiyet',
+      title: 'Canlı Konum Bildirimi',
+      description: '±3m yüksek GPS hassasiyeti',
       iconBg: '#E0F2FE',
       iconColor: '#0284C7',
+      badgeText: 'GPS Canlı',
     },
     features: [
       'Anlık sokak adresi & zaman damgası',
@@ -135,7 +142,8 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   },
   {
     id: '4',
-    tag: 'TEK DOKUNUŞLA SAHİBE ULAŞIM',
+    tagEmoji: '💬',
+    tag: 'TEK DOKUNUŞLA ULAŞIM',
     tagBg: '#D1FAE5',
     tagBorder: '#A7F3D0',
     tagTextColor: '#047857',
@@ -145,13 +153,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'Bulan kişi hiçbir uygulama indirmeden tek tıkla sizi telefonla arayabilir, WhatsApp’tan yazabilir ve varsa acil sağlık alerji notlarını görebilir.',
     photo: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Pamuk & Tarçın',
-    petBadgeStatus: 'İletişim Bilgileri Hazır',
+    collarSerial: 'TAG: #PETPIN-04',
     floatingPill: {
       icon: PhoneCall,
-      text: 'Hızlı Arama & WhatsApp',
-      subtext: 'Uygulama gerektirmez',
+      title: 'Hızlı Arama & WhatsApp',
+      description: 'Uygulama gerektirmeden direkt arama',
       iconBg: '#DCFCE7',
       iconColor: '#059669',
+      badgeText: 'Anında İletişim',
     },
     features: [
       'Doğrudan sahibini arama butonu',
@@ -161,7 +170,8 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   },
   {
     id: '5',
-    tag: 'KAYIP MODU & ALARM AĞI',
+    tagEmoji: '🚨',
+    tag: 'KAYIP MODU & ALARM',
     tagBg: '#FFE4E6',
     tagBorder: '#FECDD3',
     tagTextColor: '#BE123C',
@@ -171,13 +181,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'Uygulamadan Kayıp Modunu açın; künye okutulduğu anda telefonunuz acil durum alarmı verir, haritada rotayı çizer ve bulucuya talimatları gösterir.',
     photo: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'Max • Asil Alman Kurdu',
-    petBadgeStatus: 'Kayıp Kalkanı Aktif',
+    collarSerial: 'TAG: #PETPIN-05',
     floatingPill: {
       icon: AlertTriangle,
-      text: 'Acil SOS Kalkanı',
-      subtext: 'Öncelikli alarm modu',
+      title: 'Acil SOS Kalkanı',
+      description: 'Yüksek öncelikli kayıp alarmı',
       iconBg: '#FFE4E6',
       iconColor: '#E11D48',
+      badgeText: 'Kayıp Modu',
     },
     features: [
       'Yüksek öncelikli acil durum uyarısı',
@@ -187,7 +198,8 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   },
   {
     id: '6',
-    tag: 'PETPIN AİLESİNE HOŞ GELDİNİZ',
+    tagEmoji: '✨',
+    tag: 'PETPIN AİLESİ',
     tagBg: '#F3E8FF',
     tagBorder: '#DDD6FE',
     tagTextColor: '#6D28D9',
@@ -197,13 +209,14 @@ const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
       'Künyenizi oluşturun, PDF çıktısını alın veya galerinizden paylaşın. Dostunuz artık her adımda güvende.',
     photo: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80',
     petBadgeName: 'PetPin Ailesi',
-    petBadgeStatus: 'Korumaya Hazır',
+    collarSerial: 'TAG: #PETPIN-06',
     floatingPill: {
       icon: Sparkles,
-      text: 'Hemen Başlayın',
-      subtext: 'Ücretsiz & Sınırsız',
+      title: 'Hemen Başlayın',
+      description: 'Ücretsiz, sınırsız ve 7/24 güvenli',
       iconBg: '#F3E8FF',
       iconColor: '#7C3AED',
+      badgeText: 'Ömür Boyu',
     },
     features: [
       'Yazdırılabilir A4 künye şablonu',
@@ -271,49 +284,61 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
     return (
       <View style={styles.slideWrapper}>
-        {/* 1. Pastel Revolut Hero Pet Photo Card with Floating Glass Pill */}
+        {/* 1. Hero Pet Photo with Floating Smart Collar Tags */}
         <View style={styles.photoContainer}>
           <Image source={{ uri: item.photo }} style={styles.petHeroImage} resizeMode="cover" />
 
-          {/* Soft Bottom Gradient Scrim */}
+          {/* Soft Scrim */}
           <View style={styles.photoGradientScrim} />
 
-          {/* Top Pet Status Pill */}
-          <View style={styles.petPhotoStatusPill}>
-            <View style={[styles.liveStatusDot, { backgroundColor: item.tagDotColor }]} />
-            <Text style={styles.petPhotoStatusText}>{item.petBadgeName}</Text>
+          {/* Luxury Collar Tag (Top-Left) */}
+          <View style={styles.collarTagPill}>
+            <View style={styles.collarTagRingHole}>
+              <View style={[styles.collarTagRingDot, { backgroundColor: item.tagDotColor }]} />
+            </View>
+            <View>
+              <Text style={styles.collarTagPetName}>{item.petBadgeName}</Text>
+              <Text style={styles.collarTagSerial}>{item.collarSerial}</Text>
+            </View>
           </View>
 
-          {/* Floating Pastel Glass Pill */}
-          <View style={styles.floatingGlassPill}>
-            <View style={[styles.floatingIconCircle, { backgroundColor: item.floatingPill.iconBg }]}>
-              <PillIcon size={18} color={item.floatingPill.iconColor} strokeWidth={2.4} />
+          {/* Floating Feature Tag Card (Bottom) */}
+          <View style={styles.floatingFeatureTag}>
+            <View style={[styles.floatingIconBox, { backgroundColor: item.floatingPill.iconBg }]}>
+              <PillIcon size={20} color={item.floatingPill.iconColor} strokeWidth={2.4} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.floatingPillTitle}>{item.floatingPill.text}</Text>
-              <Text style={styles.floatingPillSub}>{item.floatingPill.subtext}</Text>
+              <View style={styles.floatingTagHeaderRow}>
+                <Text style={styles.floatingTagTitle}>{item.floatingPill.title}</Text>
+                <View style={[styles.miniStatusBadge, { backgroundColor: item.tagBg }]}>
+                  <Text style={[styles.miniStatusBadgeText, { color: item.tagTextColor }]}>
+                    {item.floatingPill.badgeText}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.floatingTagDesc}>{item.floatingPill.description}</Text>
             </View>
           </View>
         </View>
 
-        {/* 2. Crisp Milk-Glass Bottom Content Card */}
+        {/* 2. Milk-Glass Bottom Content Card */}
         <View style={styles.contentCard}>
-          {/* Pastel Category Badge */}
+          {/* Aesthetic Pastel Pill Tag */}
           <View
             style={[
-              styles.categoryBadge,
+              styles.aestheticPillTag,
               { backgroundColor: item.tagBg, borderColor: item.tagBorder },
             ]}
           >
-            <View style={[styles.categoryDot, { backgroundColor: item.tagDotColor }]} />
-            <Text style={[styles.categoryBadgeText, { color: item.tagTextColor }]}>{item.tag}</Text>
+            <Text style={styles.aestheticPillEmoji}>{item.tagEmoji}</Text>
+            <Text style={[styles.aestheticPillText, { color: item.tagTextColor }]}>{item.tag}</Text>
           </View>
 
-          {/* Bold Charcoal Revolut Typography */}
+          {/* High-Contrast Revolut Typography */}
           <Text style={styles.slideTitle}>{item.title}</Text>
           <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
 
-          {/* Pastel Feature Checklist */}
+          {/* Clean Checklist */}
           <View style={styles.featuresList}>
             {item.features.map((feat, idx) => (
               <View key={idx} style={styles.featureRow}>
@@ -330,9 +355,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   };
 
   return (
-    <PastelBackground>
+    <CosmicBackground theme="pastel">
       <SafeAreaView style={styles.safeContainer} edges={['top', 'bottom', 'left', 'right']}>
-        {/* Top Header with Revolut Segmented Story Progress Bar */}
+        {/* Top Header with Segmented Story Bar */}
         <View style={styles.topHeader}>
           {/* Segmented Progress Bars */}
           <View style={styles.progressSegmentsRow}>
@@ -353,7 +378,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             })}
           </View>
 
-          {/* Brand & Skip Button */}
+          {/* Brand Row & Skip */}
           <View style={styles.navRow}>
             <View style={styles.brandRow}>
               <View style={styles.brandDot} />
@@ -370,7 +395,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           </View>
         </View>
 
-        {/* Slides Carousel */}
+        {/* Carousel Slides */}
         <FlatList
           ref={flatListRef}
           data={PASTEL_SLIDES}
@@ -393,7 +418,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           style={styles.carouselList}
         />
 
-        {/* Bottom Action CTA */}
+        {/* Bottom CTA Action Button */}
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={[styles.actionBtn, isLastSlide ? styles.actionBtnGetStarted : styles.actionBtnNext]}
@@ -405,7 +430,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </PastelBackground>
+    </CosmicBackground>
   );
 };
 
@@ -470,7 +495,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderWidth: 1,
     borderColor: 'rgba(15, 23, 42, 0.08)',
   },
@@ -489,7 +514,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // Hero Pet Photo Card
+  // Hero Pet Photo Container
   photoContainer: {
     width: '100%',
     height: SCREEN_HEIGHT * 0.32,
@@ -497,7 +522,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: '#FFFFFF',
     backgroundColor: '#E2E8F0',
     ...SHADOWS.card,
   },
@@ -510,94 +535,126 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 90,
+    height: 95,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
-  petPhotoStatusPill: {
+
+  // Luxury Collar Tag Badge (Top-Left)
+  collarTagPill: {
     position: 'absolute',
     top: 14,
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    paddingVertical: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 1)',
+    borderColor: '#FFFFFF',
+    gap: 8,
     ...SHADOWS.subtle,
   },
-  liveStatusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 6,
+  collarTagRingHole: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    borderColor: '#0F4C5C',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  petPhotoStatusText: {
+  collarTagRingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  collarTagPetName: {
     fontSize: 11,
     fontWeight: '800',
     color: '#0F172A',
   },
-  floatingGlassPill: {
+  collarTagSerial: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.5,
+  },
+
+  // Floating Feature Tag Card (Bottom)
+  floatingFeatureTag: {
     position: 'absolute',
     bottom: 12,
     left: 12,
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 1)',
+    borderColor: '#FFFFFF',
     gap: 10,
     ...SHADOWS.subtle,
   },
-  floatingIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  floatingIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  floatingPillTitle: {
+  floatingTagHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  floatingTagTitle: {
     fontSize: 13,
     fontWeight: '800',
     color: '#0F172A',
   },
-  floatingPillSub: {
+  miniStatusBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  miniStatusBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+  floatingTagDesc: {
     fontSize: 11,
     color: '#64748B',
     fontWeight: '600',
   },
 
-  // Bottom Content Card (Crisp Milk-Glass)
+  // Bottom Content Card (Milk-Glass)
   contentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
     borderRadius: 28,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 1)',
+    borderColor: '#FFFFFF',
     marginTop: 10,
     ...SHADOWS.card,
   },
-  categoryBadge: {
+  aestheticPillTag: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 4,
     paddingHorizontal: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 8,
+    gap: 6,
   },
-  categoryDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginRight: 6,
+  aestheticPillEmoji: {
+    fontSize: 11,
   },
-  categoryBadgeText: {
+  aestheticPillText: {
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.6,
