@@ -44,7 +44,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
   const [copied, setCopied] = useState(false);
 
   const tagId = profile.tagId;
-  const publicWebUrl = `https://petpin.pages.dev/?id=${encodeURIComponent(
+  const publicWebUrl = `https://petpin.muhammetatmaca79.workers.dev/?id=${encodeURIComponent(
     tagId
   )}&name=${encodeURIComponent(profile.petName)}&owner=${encodeURIComponent(
     profile.ownerName
