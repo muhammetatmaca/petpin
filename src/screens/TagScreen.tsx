@@ -10,6 +10,9 @@ import {
   Switch,
   Modal,
   Linking,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   QrCode,
@@ -22,11 +25,14 @@ import {
   CheckCircle2,
   Sparkles,
   AlertCircle,
-  Printer,
   Copy,
   ExternalLink,
   ChevronRight,
   Info,
+  RefreshCw,
+  Link as LinkIcon,
+  X,
+  Check,
 } from 'lucide-react-native';
 import { usePet } from '../context/PetContext';
 import { COLORS, SHADOWS } from '../theme/colors';
@@ -36,11 +42,13 @@ interface TagScreenProps {
 }
 
 export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
-  const { profile } = usePet();
+  const { profile, regenerateTagId, pairPhysicalTag } = usePet();
   const [showPhoneToFinder, setShowPhoneToFinder] = useState(true);
   const [showWhatsAppToFinder, setShowWhatsAppToFinder] = useState(true);
   const [showMedicalNotes, setShowMedicalNotes] = useState(true);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [pairModalVisible, setPairModalVisible] = useState(false);
+  const [customTagInput, setCustomTagInput] = useState('');
   const [copied, setCopied] = useState(false);
 
   const tagId = profile.tagId;
@@ -69,6 +77,22 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleRegenerateId = async () => {
+    const newId = await regenerateTagId();
+    alert(`Yeni benzersiz künye kodunuz oluşturuldu: ${newId}`);
+  };
+
+  const handlePairTag = async () => {
+    if (customTagInput.trim().length > 3) {
+      await pairPhysicalTag(customTagInput);
+      setPairModalVisible(false);
+      setCustomTagInput('');
+      alert('Fiziksel künyeniz başarıyla profilinize bağlandı!');
+    } else {
+      alert('Lütfen geçerli bir künye seri numarası giriniz.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Header */}
@@ -95,12 +119,12 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
           <View style={styles.tagTopBadgeRow}>
             <View style={styles.nfcBadge}>
               <Sparkles size={12} color={COLORS.emerald} style={{ marginRight: 4 }} />
-              <Text style={styles.nfcBadgeText}>NFC + QR AKTİF</Text>
+              <Text style={styles.nfcBadgeText}>BENZERSİZ QR + NFC</Text>
             </View>
             <Text style={styles.noBatteryText}>Pil Gerektirmez • Pasif</Text>
           </View>
 
-          {/* High-Resolution QR Graphic */}
+          {/* High-Resolution Dynamic QR Graphic */}
           <View style={styles.qrWrapper}>
             <Image
               source={{
@@ -115,7 +139,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
             </View>
           </View>
 
-          {/* Tag ID & Copy Row */}
+          {/* Unique Tag ID & Copy Row */}
           <TouchableOpacity
             style={styles.tagIdRow}
             activeOpacity={0.7}
@@ -138,9 +162,33 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
               </Text>
             </View>
           </TouchableOpacity>
+
+          {/* Tag ID Actions: Regenerate or Pair Physical Collar */}
+          <View style={styles.tagActionsRow}>
+            <TouchableOpacity
+              style={styles.tagActionBtn}
+              activeOpacity={0.8}
+              onPress={handleRegenerateId}
+            >
+              <RefreshCw size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.tagActionBtnText}>Yeni ID Üret</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tagActionBtn, { backgroundColor: 'rgba(15, 76, 92, 0.08)' }]}
+              activeOpacity={0.8}
+              onPress={() => {
+                setCustomTagInput(tagId);
+                setPairModalVisible(true);
+              }}
+            >
+              <LinkIcon size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.tagActionBtnText}>Fiziksel Künye Eşle</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Finder Preview Trigger Button (Bulan Kişi Görünümünü Test Et) */}
+        {/* Finder Preview Trigger Button */}
         <TouchableOpacity
           style={styles.previewFinderButton}
           activeOpacity={0.88}
@@ -167,7 +215,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
             <Text style={styles.infoExplainerTitle}>Bulan Kişi Nasıl Okutur?</Text>
           </View>
           <Text style={styles.infoExplainerText}>
-            Milo kaybolursa, bulan kişinin herhangi bir uygulama yüklemesine gerek yoktur. Telefonunun standart kamera uygulamasını QR koda tutması yeterlidir. Tarandığı anda konum izniyle birlikte GPS noktası doğrudan size bildirilir.
+            {profile.petName} kaybolursa, bulan kişinin herhangi bir uygulama yüklemesine gerek yoktur. Telefonunun standart kamera uygulamasını QR koda tutması yeterlidir. Tarandığı anda konum izniyle birlikte GPS noktası doğrudan size bildirilir.
           </Text>
         </View>
 
@@ -179,12 +227,11 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
 
           {/* Setting 1: Show Phone */}
           <View style={styles.settingRow}>
-            <View style={styles.settingIconWrapper}>
-              <Phone size={18} color={COLORS.primary} />
-            </View>
-            <View style={styles.settingTextWrapper}>
-              <Text style={styles.settingTitle}>Telefon Numarası</Text>
-              <Text style={styles.settingDesc}>+90 (555) 234-5678 aransın</Text>
+            <View style={styles.settingTextGroup}>
+              <Text style={styles.settingLabel}>Telefon Numarasını Göster</Text>
+              <Text style={styles.settingDesc}>
+                Bulan kişi tek tıkla doğrudan sizi telefonla arayabilir
+              </Text>
             </View>
             <Switch
               value={showPhoneToFinder}
@@ -194,16 +241,15 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.settingDivider} />
 
           {/* Setting 2: Show WhatsApp */}
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrapper, { backgroundColor: '#ECFDF5' }]}>
-              <MessageCircle size={18} color={COLORS.emerald} />
-            </View>
-            <View style={styles.settingTextWrapper}>
-              <Text style={styles.settingTitle}>WhatsApp Butonu</Text>
-              <Text style={styles.settingDesc}>Doğrudan mesaj ve fotoğraf alabilsin</Text>
+            <View style={styles.settingTextGroup}>
+              <Text style={styles.settingLabel}>WhatsApp Butonunu Göster</Text>
+              <Text style={styles.settingDesc}>
+                Bulan kişi anında fotoğraf ve konum mesajı atabilir
+              </Text>
             </View>
             <Switch
               value={showWhatsAppToFinder}
@@ -213,40 +259,76 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
             />
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.settingDivider} />
 
-          {/* Setting 3: Show Medical / Allergy */}
+          {/* Setting 3: Show Medical Info */}
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrapper, { backgroundColor: COLORS.goldLight }]}>
-              <AlertCircle size={18} color={COLORS.gold} />
-            </View>
-            <View style={styles.settingTextWrapper}>
-              <Text style={styles.settingTitle}>Tıbbi Bilgi & Alerjiler</Text>
-              <Text style={styles.settingDesc}>Yabancı gıda verilmemesi uyarısı</Text>
+            <View style={styles.settingTextGroup}>
+              <Text style={styles.settingLabel}>Alerji & Sağlık Notunu Göster</Text>
+              <Text style={styles.settingDesc}>
+                Önemli beslenme veya ilaç uyarılarını ekranda belirtir
+              </Text>
             </View>
             <Switch
               value={showMedicalNotes}
               onValueChange={setShowMedicalNotes}
-              trackColor={{ false: '#CBD5E1', true: COLORS.gold }}
+              trackColor={{ false: '#CBD5E1', true: COLORS.coral }}
               thumbColor="#FFFFFF"
             />
           </View>
         </View>
-
-        {/* Secondary Action: Print / Order QR */}
-        <View style={styles.extraActionsRow}>
-          <TouchableOpacity
-            style={styles.extraActionBtn}
-            activeOpacity={0.8}
-            onPress={handleShareTag}
-          >
-            <Printer size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.extraActionBtnText}>Künyeyi Yazdır / İndir</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
 
-      {/* Finder Web Preview Modal (Bulan Kişinin Web Görünümü Simülasyonu) */}
+      {/* Pair Physical Tag Modal */}
+      <Modal
+        visible={pairModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setPairModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.pairModalCard}>
+            <View style={styles.pairModalHeader}>
+              <Text style={styles.pairModalTitle}>Fiziksel Künyeyi Eşle</Text>
+              <TouchableOpacity
+                style={styles.pairCloseBtn}
+                onPress={() => setPairModalVisible(false)}
+              >
+                <X size={20} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.pairModalDesc}>
+              Satın aldığınız metal veya silikon PetPin künyesinin arkasında yazan benzersiz seri kodunu giriniz.
+            </Text>
+
+            <View style={styles.pairInputContainer}>
+              <TextInput
+                style={styles.pairInput}
+                value={customTagInput}
+                onChangeText={setCustomTagInput}
+                placeholder="Örn: PETPIN-TR-8F3A29"
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.pairSubmitBtn}
+              activeOpacity={0.88}
+              onPress={handlePairTag}
+            >
+              <Check size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.pairSubmitBtnText}>Künyeyi Eşleştir</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Live Finder Web Browser Simulation Modal */}
       <Modal
         visible={previewModalVisible}
         animationType="slide"
@@ -254,17 +336,21 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
         onRequestClose={() => setPreviewModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            {/* Modal Header Bar simulating Mobile Browser */}
-            <View style={styles.browserHeaderBar}>
+          <View style={styles.browserModalContainer}>
+            {/* Fake Mobile Browser Address Bar */}
+            <View style={styles.browserHeader}>
               <View style={styles.browserUrlPill}>
-                <Text style={styles.browserUrlText}>🔒 petpin.app/t/milo-9821</Text>
+                <ShieldCheck size={14} color={COLORS.emerald} style={{ marginRight: 6 }} />
+                <Text style={styles.browserUrlText} numberOfLines={1}>
+                  petpin.muhammetatmaca79.workers.dev/?id={tagId}
+                </Text>
               </View>
               <TouchableOpacity
-                style={styles.modalCloseBtn}
+                style={styles.browserCloseButton}
                 onPress={() => setPreviewModalVisible(false)}
+                activeOpacity={0.8}
               >
-                <Text style={styles.modalCloseBtnText}>Kapat</Text>
+                <Text style={styles.browserCloseText}>Kapat</Text>
               </TouchableOpacity>
             </View>
 
@@ -370,13 +456,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: COLORS.background,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 13,
@@ -401,8 +486,8 @@ const styles = StyleSheet.create({
   },
   tagShowcaseCard: {
     backgroundColor: COLORS.cardBg,
-    borderRadius: 28,
-    padding: 22,
+    borderRadius: 32,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.borderLight,
@@ -414,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 18,
+    marginBottom: 20,
   },
   nfcBadge: {
     flexDirection: 'row',
@@ -427,41 +512,46 @@ const styles = StyleSheet.create({
     borderColor: COLORS.emeraldBorder,
   },
   nfcBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     color: COLORS.emerald,
+    letterSpacing: 0.5,
   },
   noBatteryText: {
     fontSize: 11,
-    color: COLORS.textMuted,
     fontWeight: '600',
+    color: COLORS.textMuted,
   },
   qrWrapper: {
-    width: 190,
-    height: 190,
+    position: 'relative',
+    width: 220,
+    height: 220,
+    borderRadius: 24,
     backgroundColor: '#FAFAFA',
-    borderRadius: 20,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(15, 76, 92, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
     marginBottom: 18,
-    position: 'relative',
+    ...SHADOWS.subtle,
   },
   qrImage: {
-    width: 160,
-    height: 160,
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
   },
   qrCenterLogo: {
     position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
     borderColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.subtle,
   },
   centerDot: {
     width: 14,
@@ -472,14 +562,17 @@ const styles = StyleSheet.create({
   tagIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 76, 92, 0.06)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 16,
-    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10,
+    marginBottom: 14,
   },
   tagIdText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     color: COLORS.primary,
     fontFamily: 'monospace',
@@ -488,10 +581,6 @@ const styles = StyleSheet.create({
   copyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
     gap: 4,
   },
   copyBadgeText: {
@@ -499,12 +588,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
   },
+  tagActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  tagActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  tagActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
   previewFinderButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 24,
     padding: 16,
-    borderRadius: 22,
     borderWidth: 1.5,
     borderColor: 'rgba(15, 76, 92, 0.15)',
     marginBottom: 16,
@@ -518,7 +626,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
-    ...SHADOWS.glowTeal,
   },
   previewBtnTextWrapper: {
     flex: 1,
@@ -526,13 +633,13 @@ const styles = StyleSheet.create({
   previewBtnTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: COLORS.textPrimary,
+    color: COLORS.primary,
     marginBottom: 2,
   },
   previewBtnSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
-    lineHeight: 16,
+    lineHeight: 15,
   },
   infoExplainerCard: {
     backgroundColor: 'rgba(15, 76, 92, 0.05)',
@@ -549,143 +656,182 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   infoExplainerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: COLORS.primary,
   },
   infoExplainerText: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 18,
+    lineHeight: 17,
   },
   settingsCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 24,
-    padding: 18,
+    padding: 20,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
-    marginBottom: 16,
     ...SHADOWS.subtle,
   },
   settingsSectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
-  settingIconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(15, 76, 92, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  settingTextGroup: {
+    flex: 1,
     marginRight: 12,
   },
-  settingTextWrapper: {
-    flex: 1,
-    marginRight: 8,
-  },
-  settingTitle: {
-    fontSize: 14,
+  settingLabel: {
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   settingDesc: {
     fontSize: 11,
     color: COLORS.textSecondary,
-    marginTop: 1,
+    lineHeight: 15,
   },
-  divider: {
+  settingDivider: {
     height: 1,
     backgroundColor: COLORS.borderLight,
-    marginVertical: 4,
-  },
-  extraActionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  extraActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.cardBg,
-    paddingVertical: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOWS.subtle,
-  },
-  extraActionBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.primary,
+    marginVertical: 10,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(7, 13, 18, 0.75)',
     justifyContent: 'flex-end',
   },
-  modalContainer: {
+  pairModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 36,
+  },
+  pairModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  pairModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  pairCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pairModalDesc: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  pairInputContainer: {
+    marginBottom: 18,
+  },
+  pairInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.primary,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  pairSubmitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: 20,
+    ...SHADOWS.glowTeal,
+  },
+  pairSubmitBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  browserModalContainer: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     maxHeight: '90%',
-    paddingBottom: 30,
+    paddingBottom: 24,
   },
-  browserHeaderBar: {
+  browserHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
   browserUrlPill: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   browserUrlText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
     color: COLORS.textSecondary,
+    fontWeight: '600',
   },
-  modalCloseBtn: {
-    paddingHorizontal: 10,
+  browserCloseButton: {
+    paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  modalCloseBtnText: {
-    fontSize: 14,
+  browserCloseText: {
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.primary,
   },
   webPreviewContent: {
     padding: 20,
-    alignItems: 'center',
   },
   webSuccessBanner: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#ECFDF5',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     borderWidth: 1,
     borderColor: COLORS.emeraldBorder,
-    marginBottom: 18,
-    width: '100%',
-    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   webSuccessIcon: {
-    marginRight: 10,
-    marginTop: 2,
+    marginRight: 12,
   },
   webSuccessTitle: {
     fontSize: 14,
@@ -694,30 +840,38 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   webSuccessDesc: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#047857',
     lineHeight: 16,
   },
   webPetCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 22,
+    padding: 20,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     marginBottom: 16,
-    width: '100%',
   },
   webPetAvatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
     marginBottom: 10,
   },
   webPetName: {
     fontSize: 22,
     fontWeight: '800',
     color: COLORS.textPrimary,
+    marginBottom: 2,
   },
   webPetBreed: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    marginBottom: 8,
+    fontWeight: '500',
+    marginBottom: 10,
   },
   webOwnerPill: {
     backgroundColor: 'rgba(15, 76, 92, 0.08)',
@@ -726,30 +880,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   webOwnerText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: COLORS.primary,
   },
   webAlertBox: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: COLORS.coralLight,
     padding: 12,
     borderRadius: 14,
-    width: '100%',
-    marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.coralBorder,
+    marginBottom: 16,
   },
   webAlertText: {
     flex: 1,
-    fontSize: 12,
-    color: '#991B1B',
-    lineHeight: 16,
+    fontSize: 11,
+    color: COLORS.coral,
     fontWeight: '600',
+    lineHeight: 15,
   },
   webActionStack: {
-    width: '100%',
     gap: 10,
   },
   webCallButton: {
@@ -757,12 +909,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 18,
     ...SHADOWS.glowTeal,
   },
   webCallButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -770,14 +922,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: COLORS.emerald,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 18,
   },
   webWhatsAppButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.emerald,
   },

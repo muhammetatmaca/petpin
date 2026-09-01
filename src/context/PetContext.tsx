@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { generateUniqueTagId } from '../utils/tagGenerator';
 
 export interface PetProfile {
   petName: string;
@@ -22,11 +23,11 @@ const DEFAULT_PROFILE: PetProfile = {
   petAge: '3 Yaşında',
   petPhoto: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=80',
   ownerName: 'Sarah Jenkins',
-  ownerPhone: '+90 555 234 5678',
-  ownerWhatsApp: '+90 555 234 5678',
+  ownerPhone: '+90 555 234 56 78',
+  ownerWhatsApp: '+90 555 234 56 78',
   vetInfo: 'Dr. Aris • Kadıköy Hayvan Kliniği',
   medicalNotes: 'Tavuk ve buğday alerjisi vardır. Lütfen sadece su veriniz.',
-  tagId: 'PETPIN-QR-9821-TR',
+  tagId: generateUniqueTagId(),
   isLostMode: false,
 };
 
@@ -37,6 +38,8 @@ interface PetContextType {
   updateProfile: (updates: Partial<PetProfile>) => Promise<void>;
   pickPetPhoto: () => Promise<void>;
   toggleLostMode: () => Promise<void>;
+  regenerateTagId: () => Promise<string>;
+  pairPhysicalTag: (newTagId: string) => Promise<void>;
 }
 
 const PetContext = createContext<PetContextType | undefined>(undefined);
@@ -50,7 +53,11 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (AsyncStorage && AsyncStorage.getItem) {
           const stored = await AsyncStorage.getItem(STORAGE_KEY);
           if (stored) {
-            setProfile(JSON.parse(stored));
+            const parsed = JSON.parse(stored);
+            if (!parsed.tagId) {
+              parsed.tagId = generateUniqueTagId();
+            }
+            setProfile(parsed);
           }
         }
       } catch {
@@ -74,6 +81,19 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleLostMode = async () => {
     await updateProfile({ isLostMode: !profile.isLostMode });
+  };
+
+  const regenerateTagId = async (): Promise<string> => {
+    const newId = generateUniqueTagId();
+    await updateProfile({ tagId: newId });
+    return newId;
+  };
+
+  const pairPhysicalTag = async (newTagId: string) => {
+    const cleanId = newTagId.trim().toUpperCase();
+    if (cleanId.length > 3) {
+      await updateProfile({ tagId: cleanId });
+    }
   };
 
   const pickPetPhoto = async () => {
@@ -106,6 +126,8 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateProfile,
         pickPetPhoto,
         toggleLostMode,
+        regenerateTagId,
+        pairPhysicalTag,
       }}
     >
       {children}
