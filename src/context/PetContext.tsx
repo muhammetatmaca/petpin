@@ -60,6 +60,7 @@ interface PetContextType {
   regenerateTagId: () => Promise<string>;
   pairPhysicalTag: (newTagId: string) => Promise<void>;
   clearActiveScanAlert: () => void;
+  simulateTestScan: () => void;
 }
 
 const PetContext = createContext<PetContextType | undefined>(undefined);
@@ -92,7 +93,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadSavedProfile();
   }, []);
 
-  // Real-time Telemetry Listener (Dual-pipeline: Ultra-fast PubSub + Cloudflare API)
+  // Real-time Telemetry Listener (Dual-pipeline: Cloudflare Pages API + PubSub)
   useEffect(() => {
     if (!profile.tagId) return;
 
@@ -104,7 +105,32 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     async function pollLiveScans() {
       try {
-        // 1. Ultra-fast PubSub Gateway Poll (Specific & Global)
+        // 1. Cloudflare Pages Functions API Poll (Tag-specific & Global)
+        const [resTag, resGlobal] = await Promise.allSettled([
+          fetch(`https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(profile.tagId)}`),
+          fetch(`https://petpin.muhammetatmaca79.workers.dev/api/scan`),
+        ]);
+
+        for (const r of [resTag, resGlobal]) {
+          if (r.status === 'fulfilled') {
+            try {
+              const data = await r.value.json();
+              if (data && data.success && data.has_scan && data.scan) {
+                const incomingScan: ScanAlert = data.scan;
+                if (incomingScan.id !== lastProcessedScanIdRef.current) {
+                  lastProcessedScanIdRef.current = incomingScan.id;
+                  setActiveScanAlert(incomingScan);
+                  await triggerLiveScanNotification(profile.petName, incomingScan.address);
+                  return;
+                }
+              }
+            } catch {
+              // silent
+            }
+          }
+        }
+
+        // 2. Ultra-fast PubSub Gateway Poll (Specific & Global)
         const [specificRes, globalRes] = await Promise.allSettled([
           fetch(`https://ntfy.sh/${specificTopic}/json?poll=1&since=3m`),
           fetch(`https://ntfy.sh/${globalTopic}/json?poll=1&since=3m`),
@@ -150,7 +176,6 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                   };
 
-                  console.log('[PetContext] Live Scan Detected:', incomingScan.address);
                   setActiveScanAlert(incomingScan);
                   await triggerLiveScanNotification(profile.petName, incomingScan.address);
                   return;
@@ -161,26 +186,6 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         }
-
-        // 2. Cloudflare API Poll
-        const res = await fetch(
-          `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(
-            profile.tagId
-          )}`
-        );
-        const data = await res.json();
-
-        if (data && data.success && data.has_scan && data.scan) {
-          const incomingScan: ScanAlert = data.scan;
-          if (incomingScan.id !== lastProcessedScanIdRef.current) {
-            lastProcessedScanIdRef.current = incomingScan.id;
-            setActiveScanAlert(incomingScan);
-            await triggerLiveScanNotification(
-              profile.petName,
-              incomingScan.address
-            );
-          }
-        }
       } catch (err) {
         // Silent network retry
       }
@@ -189,8 +194,8 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Immediate check on mount
     pollLiveScans();
 
-    // Poll every 2.5 seconds for instant detection
-    const interval = setInterval(pollLiveScans, 2500);
+    // Poll every 3 seconds
+    const interval = setInterval(pollLiveScans, 3000);
 
     return () => {
       clearInterval(interval);
@@ -230,6 +235,23 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveScanAlert(null);
   };
 
+  const simulateTestScan = () => {
+    const testScan: ScanAlert = {
+      id: Date.now().toString(),
+      tag_id: profile.tagId,
+      pet_name: profile.petName,
+      latitude: 40.9876,
+      longitude: 29.0345,
+      accuracy: '±3m (Yüksek)',
+      address: 'Moda Sahili Parkı, Kadıköy / İstanbul',
+      device: 'Mobil Safari / iPhone 15',
+      timestamp: new Date().toISOString(),
+      timeFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setActiveScanAlert(testScan);
+    triggerLiveScanNotification(profile.petName, testScan.address);
+  };
+
   const pickPetPhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -264,6 +286,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         regenerateTagId,
         pairPhysicalTag,
         clearActiveScanAlert,
+        simulateTestScan,
       }}
     >
       {children}

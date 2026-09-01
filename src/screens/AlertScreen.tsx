@@ -32,7 +32,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
   onBackPress,
   onNavigatePress,
 }) => {
-  const { profile, activeScanAlert, clearActiveScanAlert } = usePet();
+  const { profile, activeScanAlert, clearActiveScanAlert, simulateTestScan } = usePet();
 
   const handleCallFinder = () => {
     if (profile.ownerPhone) {
@@ -122,6 +122,18 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
                 </Text>
               </View>
             </View>
+
+            {/* Test Simulation Button */}
+            <TouchableOpacity
+              style={styles.testSimulateBtn}
+              activeOpacity={0.8}
+              onPress={simulateTestScan}
+            >
+              <Sparkles size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.testSimulateBtnText}>
+                Tarama Bildirimini Test Et (Simülasyon)
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -375,6 +387,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     lineHeight: 18,
+  },
+  testSimulateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 76, 92, 0.08)',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 76, 92, 0.15)',
+    width: '100%',
+    marginBottom: 20,
+  },
+  testSimulateBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   alertBannerCard: {
     flexDirection: 'row',
