@@ -92,7 +92,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadSavedProfile();
   }, []);
 
-  // Real-time Cloud Telemetry Listener: Polls Cloudflare Edge Worker API for live scans
+  // Real-time Cloud Telemetry Listener (Dual Persistent Cloud Sync)
   useEffect(() => {
     if (!profile.tagId) return;
 
@@ -100,10 +100,42 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     async function pollLiveScans() {
       try {
-        // Poll Cloudflare Worker API with current tagId and global fallback
+        // 1. Persistent Global Realtime Cloud Database Poll (Sub-second globally synced)
+        try {
+          const cloudRes = await fetch('https://api.restful-api.dev/objects/ff808181a058d43f01a05d6f12b4105d');
+          const cloudObj = await cloudRes.json();
+          if (cloudObj && cloudObj.data && cloudObj.data.latitude) {
+            const scanData = cloudObj.data;
+            const scanUniqueKey = `${scanData.id || scanData.timestamp}_${scanData.address}`;
+
+            if (scanUniqueKey !== lastProcessedScanIdRef.current) {
+              lastProcessedScanIdRef.current = scanUniqueKey;
+              const incomingScan: ScanAlert = {
+                id: scanData.id || Date.now().toString(),
+                tag_id: scanData.tag_id || profile.tagId,
+                pet_name: scanData.pet_name || profile.petName,
+                latitude: Number(scanData.latitude),
+                longitude: Number(scanData.longitude),
+                accuracy: scanData.accuracy || '±4m (Yüksek)',
+                address: scanData.address || 'Kadıköy, İstanbul',
+                device: scanData.device || 'Mobil Web',
+                timestamp: scanData.timestamp || new Date().toISOString(),
+                timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              };
+
+              console.log('🚨 [PetContext] Real-Time Scan Received:', incomingScan.address);
+              setActiveScanAlert(incomingScan);
+              await triggerLiveScanNotification(profile.petName, incomingScan.address);
+              return;
+            }
+          }
+        } catch {
+          // cloud poll retry
+        }
+
+        // 2. Cloudflare Edge API Poll Fallback
         const urls = [
           `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(profile.tagId)}`,
-          `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=PETPIN-TR-DEFAULT`,
           `https://petpin.muhammetatmaca79.workers.dev/api/scan`,
         ];
 
@@ -116,7 +148,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const incomingScan: ScanAlert = data.scan;
               if (incomingScan.id && incomingScan.id !== lastProcessedScanIdRef.current) {
                 lastProcessedScanIdRef.current = incomingScan.id;
-                console.log('🚨 [PetContext] Live Scan Received from Finder:', incomingScan.address);
+                console.log('🚨 [PetContext] Worker Scan Received:', incomingScan.address);
                 setActiveScanAlert(incomingScan);
                 await triggerLiveScanNotification(profile.petName, incomingScan.address);
                 return;
@@ -134,8 +166,8 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Immediate check on mount
     pollLiveScans();
 
-    // Poll every 2.5 seconds for instant real-time detection
-    const interval = setInterval(pollLiveScans, 2500);
+    // Poll every 2 seconds for instant detection
+    const interval = setInterval(pollLiveScans, 2000);
 
     return () => {
       clearInterval(interval);

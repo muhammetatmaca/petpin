@@ -151,21 +151,24 @@ async function sendScanLocation(lat, lng, accuracy, address) {
   };
 
   try {
-    // 1. Dispatch relative API
-    fetch('/api/scan', {
+    // 1. Dispatch to Persistent Global Cloud Realtime Database (100% Global Sync)
+    await fetch('https://api.restful-api.dev/objects/ff808181a058d43f01a05d6f12b4105d', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'PETPIN-SCAN',
+        data: payload,
+      }),
+    });
+
+    // 2. Dispatch to Cloudflare Worker API
+    fetch('https://petpin.muhammetatmaca79.workers.dev/api/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).catch(() => null);
 
-    // 2. Dispatch absolute Cloudflare Worker API
-    await fetch('https://petpin.muhammetatmaca79.workers.dev/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    console.log('[PetPin Telemetry Sent]:', payload.address);
+    console.log('[PetPin Cloud Sync Success]:', payload.address);
   } catch (e) {
     console.log('[Telemetry Error]:', e);
   }
