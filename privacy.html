@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gizlilik Politikası | PetPin - Virelonsoft</title>
+  <meta name="description" content="PetPin (com.virelon.petpin) Gizlilik Politikası ve Kullanıcı Veri Güvenliği Bilgilendirmesi - Virelonsoft">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #040914;
+      color: #E2E8F0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+
+    /* Originkit Cosmic BG Canvas */
+    #glCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 10;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 60px 24px 100px;
+    }
+
+    /* Header & Brand */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #10B981 0%, #0F4C5C 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.4);
+    }
+
+    .brand-logo-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: #FFFFFF;
+    }
+
+    .brand-text {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      color: #FFFFFF;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .lang-toggle {
+      display: flex;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .lang-btn {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #94A3B8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .lang-btn.active {
+      background: #10B981;
+      color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Main Privacy Card */
+    .privacy-card {
+      background: rgba(10, 18, 34, 0.78);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 48px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    }
+
+    @media (max-width: 640px) {
+      .privacy-card {
+        padding: 28px 20px;
+        border-radius: 22px;
+      }
+    }
+
+    .doc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38BDF8;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -0.8px;
+      margin-bottom: 12px;
+      line-height: 1.25;
+    }
+
+    .meta-info-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      margin-bottom: 36px;
+      font-size: 13px;
+      color: #94A3B8;
+    }
+
+    .meta-item strong {
+      color: #F1F5F9;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #F8FAFC;
+      letter-spacing: -0.4px;
+      margin: 40px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 svg {
+      color: #10B981;
+      flex-shrink: 0;
+    }
+
+    p {
+      color: #CBD5E1;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 20px;
+      color: #CBD5E1;
+    }
+
+    li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    li strong {
+      color: #FFFFFF;
+    }
+
+    .highlight-box {
+      background: rgba(16, 185, 129, 0.08);
+      border-left: 4px solid #10B981;
+      border-radius: 0 16px 16px 0;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .highlight-box p {
+      margin-bottom: 0;
+      color: #E2E8F0;
+      font-size: 14.5px;
+    }
+
+    .contact-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14.5px;
+      color: #CBD5E1;
+    }
+
+    .contact-row strong {
+      color: #FFFFFF;
+      min-width: 140px;
+    }
+
+    .contact-row a {
+      color: #34D399;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .contact-row a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748B;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Official Originkit Cosmic BG GLSL WebGL Canvas -->
+  <canvas id="glCanvas"></canvas>
+
+  <div class="page-wrapper">
+    <!-- Header -->
+    <header class="header-bar">
+      <div class="brand-group">
+        <div class="brand-logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+        <div class="brand-text">PetPin</div>
+        <div class="brand-badge">OFFICIAL PRIVACY POLICY</div>
+      </div>
+
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btn-tr" onclick="setLang('tr')">Türkçe</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">English</button>
+      </div>
+    </header>
+
+    <!-- Content Card -->
+    <main class="privacy-card">
+      <div id="content-tr">
+        <div class="doc-badge">GÜNCELLENME: 2 EYLÜL 2026 • SÜRÜM 2.4</div>
+        <h1>PetPin Gizlilik Politikası</h1>
+        <p>Bu Gizlilik Politikası, <strong>Virelonsoft</strong> ("Şirket", "biz", "bize" veya "bizim") tarafından geliştirilen <strong>PetPin</strong> (Paket Adı: <code>com.virelon.petpin</code>) mobil uygulaması ve ilgili bulut ekosistemini kullanan tüm kullanıcılarımızın kişisel verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu açıklamaktadır.</p>
+
+        <div class="meta-info-bar">
+          <div class="meta-item"><strong>Uygulama:</strong> PetPin</div>
+          <div class="meta-item"><strong>Geliştirici:</strong> Virelonsoft</div>
+          <div class="meta-item"><strong>Paket Kimliği:</strong> com.virelon.petpin</div>
+          <div class="meta-item"><strong>İletişim:</strong> muhammetatmaca79@gmail.com</div>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>Özet Taahhüdümüz:</strong> PetPin, evcil hayvan sahiplerinin ve kayıp hayvanları bulan yardımseverlerin gizliliğine mutlak saygı duyar. Konum verileri yalnızca künye okutulduğunda ve bulan kişinin açık izniyle anlık olarak iletilir. Kişisel verileriniz asla 3. taraflara satılmaz veya pazarlama amacıyla paylaşılmaz.</p>
+        </div>
+
+        <h2>1. Toplanan Bilgiler ve Veri Türleri</h2>
+        <p>PetPin uygulamasını ve akıllı künye ekosistemini kullandığınızda aşağıdaki veriler toplanabilir:</p>
+        <ul>
+          <li><strong>Evcil Hayvan Profil Bilgileri:</strong> Evcil hayvanınızın adı, cinsi, doğum tarihi, fotoğrafları, aşı geçmişi, alerji/sağlık notları ve künye seri kimlik numarası (Tag ID).</li>
+          <li><strong>Sahip İletişim Bilgileri:</strong> Evcil hayvanınız kaybolduğunda bulan kişinin size ulaşabilmesi için isteğe bağlı olarak eklediğiniz telefon numarası, ad-soyad, WhatsApp bağlantısı ve acil durum veteriner kliniği bilgileri.</li>
+          <li><strong>Canlı GPS Konum Verileri:</strong> Künyeniz bir akıllı telefon tarafından tarandığında, bulan kişinin tarayıcısında "Konum Paylaşımına İzin Ver" onayını vermesi halinde toplanan anlık enlem, boylam ve sokak adresi verisi.</li>
+          <li><strong>Cihaz ve Bildirim Belirteçleri:</strong> Künye tarandığında telefonunuza anında uyarı gönderebilmek amacıyla üretilen Expo Push Notification belirteci.</li>
+        </ul>
+
+        <h2>2. Konum Verilerinin Kullanımı</h2>
+        <p>PetPin, arka planda kullanıcıları sürekli takip eden bir takip yazılımı DEĞİLDİR. Konum izinleri ve GPS verileri yalnızca aşağıdaki senaryoda kullanılır:</p>
+        <ul>
+          <li>Evcil hayvanınızı bulan kişi künyedeki QR kodu okuttuğunda, tarayıcı tarafından sorulan konum iznine onay verirse; hayvanın bulunduğu yerin koordinatları ve tahmini sokak adresi sahibine tek seferlik anlık push bildirim ve harita pini olarak iletilir.</li>
+        </ul>
+
+        <h2>3. Kamera ve Cihaz İzinleri</h2>
+        <ul>
+          <li><strong>Kamera İzni:</strong> Yalnızca uygulama içerisindeki QR kod tarayıcıyı kullanarak yeni bir künyeyi hesabınıza tanımlamak için kullanılır. Kamera görüntüsü kaydedilmez veya harici sunuculara aktarılmaz.</li>
+          <li><strong>Depolama / Galeri İzni:</strong> Evcil hayvanınızın profil fotoğrafını seçebilmeniz ve hazırlanan A4 yazdırılabilir künye PDF/PNG şablonunu telefonunuza kaydedebilmeniz için kullanılır.</li>
+        </ul>
+
+        <h2>4. Veri Güvenliği ve Şifreleme</h2>
+        <p>Toplanan tüm veriler endüstri standardı <strong>SSL/TLS (HTTPS)</strong> şifreleme protokolleri ile güvenli sunucularda saklanır. Veritabanlarımız yetkisiz erişime, sızıntılara ve kötü niyetli saldırılara karşı modern güvenlik duvarları ve token doğrulama mekanizmalarıyla korunmaktadır.</p>
+
+        <h2>5. Üçüncü Taraf Hizmet Sağlayıcılar</h2>
+        <p>Uygulama performansını ve bildirim sistemini sağlamak amacıyla güvenilir küresel altyapı sağlayıcıları kullanılmaktadır:</p>
+        <ul>
+          <li><strong>Expo & Apple Push Notification / Firebase Cloud Messaging:</strong> Kayıp künye taramalarında anlık sesli ve titreşimli push bildirimleri iletmek için.</li>
+          <li><strong>Cloudflare Workers & Edge Network:</strong> Künye tarama yönlendirmelerini yüksek hızlı ve güvenli bir şekilde çalıştırmak için.</li>
+          <li><strong>OpenStreetMap & Apple/Google Maps:</strong> Konumun harita üzerinde görselleştirilmesi için.</li>
+        </ul>
+
+        <h2>6. Kullanıcı Hakları ve Veri Silme Talebi (GDPR & KVKK)</h2>
+        <p>Kullanıcılarımız diledikleri zaman aşağıdaki haklara sahiptir:</p>
+        <ul>
+          <li>Uygulama içerisinden evcil hayvan profillerini, künye eşleştirmelerini ve iletişim bilgilerini anında güncelleme veya silme.</li>
+          <li>Şirketimizle iletişime geçerek sistemlerimizde kayıtlı tüm verilerinin kalıcı olarak silinmesini talep etme (Hesap ve Veri Silme Talepleri en geç 48 saat içinde tamamlanır).</li>
+        </ul>
+
+        <h2>7. Çocukların Gizliliği (COPPA Uyumluluğu)</h2>
+        <p>PetPin, 13 yaşın altındaki çocuklara yönelik değildir ve bilerek 13 yaşından küçük çocuklardan kişisel bilgi toplamaz.</p>
+
+        <h2>8. İletişim Bilgileri</h2>
+        <p>Gizlilik politikamız, veri güvenliği uygulamalarımız veya kişisel verilerinizin silinmesi ile ilgili her türlü soru ve talebiniz için doğrudan bizimle iletişime geçebilirsiniz:</p>
+
+        <div class="contact-card">
+          <div class="contact-row">
+            <strong>Geliştirici / Şirket:</strong>
+            <span>Virelonsoft</span>
+          </div>
+          <div class="contact-row">
+            <strong>Uygulama Adı:</strong>
+            <span>PetPin (Smart QR Pet Ecosystem)</span>
+          </div>
+          <div class="contact-row">
+            <strong>Paket Adı:</strong>
+            <span>com.virelon.petpin</span>
+          </div>
+          <div class="contact-row">
+            <strong>E-Posta:</strong>
+            <a href="mailto:muhammetatmaca79@gmail.com">muhammetatmaca79@gmail.com</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- English Content -->
+      <div id="content-en" style="display: none;">
+        <div class="doc-badge">LAST UPDATED: SEPTEMBER 2, 2026 • VERSION 2.4</div>
+        <h1>PetPin Privacy Policy</h1>
+        <p>This Privacy Policy outlines how <strong>Virelonsoft</strong> ("Company", "we", "our", or "us") collects, utilizes, and safeguards your personal data when using the <strong>PetPin</strong> mobile application (Package ID: <code>com.virelon.petpin</code>) and associated smart pet safety ecosystem.</p>
+
+        <div class="meta-info-bar">
+          <div class="meta-item"><strong>App Name:</strong> PetPin</div>
+          <div class="meta-item"><strong>Developer:</strong> Virelonsoft</div>
+          <div class="meta-item"><strong>Package ID:</strong> com.virelon.petpin</div>
+          <div class="meta-item"><strong>Contact:</strong> muhammetatmaca79@gmail.com</div>
+        </div>
+
+        <div class="highlight-box">
+          <p><strong>Our Commitment:</strong> We respect your privacy. PetPin does NOT track your location in the background. GPS coordinates are captured strictly upon user authorization when a lost pet's smart QR tag is scanned by a finder. Your personal data is never sold to third parties.</p>
+        </div>
+
+        <h2>1. Information We Collect</h2>
+        <ul>
+          <li><strong>Pet Profile Data:</strong> Name, breed, birth date, photo, medical history, dietary allergies, and unique Tag ID.</li>
+          <li><strong>Owner Emergency Contact Info:</strong> Optional phone number, WhatsApp link, and emergency veterinary clinic contact notes.</li>
+          <li><strong>Live Scan GPS Coordinates:</strong> Real-time latitude, longitude, and estimated street address transmitted only when a finder scans the tag and grants browser geolocation permission.</li>
+          <li><strong>Device Push Notification Tokens:</strong> Expo Push Token to deliver instant alerts when your pet's tag is scanned.</li>
+        </ul>
+
+        <h2>2. Use of Location Information</h2>
+        <p>PetPin operates on 100% passive technology and does not track users in the background. Geolocation is solely utilized when a lost pet's collar tag is scanned by a finder to alert the owner of the pet's current whereabouts.</p>
+
+        <h2>3. Device Permissions</h2>
+        <ul>
+          <li><strong>Camera:</strong> Used exclusively to scan physical PetPin QR tags to pair them with your pet profile.</li>
+          <li><strong>Storage/Photos:</strong> Used to upload pet profile photos and save printable A4 collar tag templates.</li>
+        </ul>
+
+        <h2>4. Data Security & Storage</h2>
+        <p>All telemetry and user information are encrypted in transit using industry-standard SSL/TLS protocols and stored securely with modern token authentication.</p>
+
+        <h2>5. User Rights & Data Deletion (GDPR / CCPA)</h2>
+        <p>You may edit or delete your pet profiles at any time in the app. For full account and data removal, email us at <a href="mailto:muhammetatmaca79@gmail.com" style="color: #34D399;">muhammetatmaca79@gmail.com</a>. Requests are completed within 48 hours.</p>
+
+        <h2>6. Contact Us</h2>
+        <div class="contact-card">
+          <div class="contact-row">
+            <strong>Company:</strong>
+            <span>Virelonsoft</span>
+          </div>
+          <div class="contact-row">
+            <strong>Package Name:</strong>
+            <span>com.virelon.petpin</span>
+          </div>
+          <div class="contact-row">
+            <strong>Inquiries & Support:</strong>
+            <a href="mailto:muhammetatmaca79@gmail.com">muhammetatmaca79@gmail.com</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2026 Virelonsoft • PetPin (com.virelon.petpin) All Rights Reserved.</p>
+    </footer>
+  </div>
+
+  <!-- Originkit Cosmic BG WebGL Shader Script -->
+  <script>
+    function setLang(lang) {
+      document.getElementById('content-tr').style.display = lang === 'tr' ? 'block' : 'none';
+      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+      document.getElementById('btn-tr').className = lang === 'tr' ? 'lang-btn active' : 'lang-btn';
+      document.getElementById('btn-en').className = lang === 'en' ? 'lang-btn active' : 'lang-btn';
+    }
+
+    // Official Originkit Cosmic BG GLSL WebGL Engine
+    const canvas = document.getElementById('glCanvas');
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: true, powerPreference: 'high-performance' });
+
+    const VERT = `
+      attribute vec4 a_pos;
+      void main() { gl_Position = a_pos; }
+    `;
+
+    const FRAG = `
+      precision mediump float;
+      uniform float u_time;
+      uniform vec2 u_res;
+
+      mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+
+      float hash(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+      }
+
+      float noise(vec2 p) {
+        vec2 i = floor(p); vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
+                   mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+      }
+
+      float fbm(vec2 p) {
+        float v = 0.0, a = 0.5;
+        for (int i = 0; i < 5; i++) {
+          v += a * noise(p); p *= rot(0.5); p *= 2.1; a *= 0.5;
+        }
+        return v;
+      }
+
+      void main() {
+        vec2 p = (gl_FragCoord.xy - 0.5 * u_res.xy) / min(u_res.y, u_res.x);
+        float t = u_time * 0.08;
+        p *= rot(u_time * 0.03);
+
+        float dist = length(p);
+        float angleNoise = fbm(p * 3.0 + t * 0.5) * 0.3;
+        float distortedDist = dist + angleNoise * smoothstep(0.5, 0.0, dist);
+
+        vec2 nebP = p * 4.0;
+        vec2 q = vec2(fbm(nebP + vec2(cos(t), sin(t))), fbm(nebP + 1.2));
+        vec2 r = vec2(fbm(nebP + 4.0 * q + t), fbm(nebP + 4.0 * q + 2.8));
+        float f = fbm(nebP + 4.0 * r);
+
+        float coreMask = smoothstep(0.8, 0.0, distortedDist) * (0.5 + 0.5 * smoothstep(0.1, 0.9, f));
+        float coreGlow = exp(-3.0 * distortedDist);
+
+        vec3 coreCol = vec3(0.407, 0.137, 0.764) * (coreMask * 2.0 + coreGlow * 1.5);
+
+        float ring = smoothstep(0.05, 0.35, dist) * smoothstep(0.9, 0.3, dist);
+        float filament = pow(f, 1.2);
+
+        vec3 colMix = mix(vec3(0.0, 0.482, 1.0), vec3(0.6, 0.0, 1.0), smoothstep(0.2, 0.6, f));
+        colMix = mix(colMix, vec3(0.976, 0.976, 0.976), smoothstep(0.4, 0.9, f));
+        vec3 colOuter = colMix * ring * filament * 2.0;
+
+        float dust = smoothstep(0.3, 0.9, fbm(nebP * 1.5 + r));
+        dust = mix(1.0, dust, smoothstep(0.0, 0.3, dist));
+
+        vec3 finalCol = (coreCol + colOuter) * dust * 0.96;
+        finalCol += vec3(0.0, 0.482, 1.0) * coreMask * ring * 0.8;
+
+        float lum = max(finalCol.r, max(finalCol.g, finalCol.b));
+        gl_FragColor = vec4(finalCol, clamp(lum * 0.7, 0.0, 0.85));
+      }
+    `;
+
+    function compile(gl, type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    }
+
+    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+
+    const uTime = gl.getUniformLocation(program, "u_time");
+    const uRes = gl.getUniformLocation(program, "u_res");
+    const aPos = gl.getAttribLocation(program, "a_pos");
+
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
+
+    function resize() {
+      const scale = 0.55;
+      const w = Math.round(window.innerWidth * scale);
+      const h = Math.round(window.innerHeight * scale);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    }
+
+    const start = performance.now();
+    function render() {
+      resize();
+      const elapsed = (performance.now() - start) / 1000.0;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0.015, 0.035, 0.078, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program);
+
+      gl.uniform1f(uTime, elapsed * 1.5);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aPos);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
