@@ -1,5 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
+// Check if running inside Expo Go client
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 // Configure notification behavior for instant alert display
 Notifications.setNotificationHandler({
@@ -41,14 +45,20 @@ export async function setupNotificationPermissions(): Promise<boolean> {
 
 /**
  * Registers device for Remote Push Notifications (APNs / FCM via Expo Push Gateway)
- * This allows the phone to wake up even when the app is completely closed/killed!
+ * Safely guards against Expo Go Android limitation while working seamlessly in production builds!
  */
 export async function registerForRemotePushTokenAsync(tagId: string): Promise<string | null> {
   try {
     const hasPermission = await setupNotificationPermissions();
     if (!hasPermission) return null;
 
-    // Get unique Expo Push Token for this physical phone
+    // Expo Go on Android removed remote FCM in SDK 53+; fallback gracefully without red error
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('[NotificationService] Running in Expo Go Android - using instant polling & local notifications');
+      return null;
+    }
+
+    // Get unique Expo Push Token for production/dev builds or iOS Expo Go
     const tokenData = await Notifications.getExpoPushTokenAsync().catch(() => null);
     if (!tokenData || !tokenData.data) return null;
 
@@ -67,7 +77,7 @@ export async function registerForRemotePushTokenAsync(tagId: string): Promise<st
 
     return pushToken;
   } catch (err) {
-    console.log('Remote push registration error:', err);
+    console.log('Remote push registration handled safely:', err);
     return null;
   }
 }
@@ -80,7 +90,7 @@ export async function triggerLiveScanNotification(
     await Notifications.scheduleNotificationAsync({
       content: {
         title: `🚨 ${petName}’nin Künyesi Okutuldu!`,
-        body: `Bir hayvansever Milo'nun tasmasını okuttu. Konum: ${address}. Haritayı görmek için dokunun.`,
+        body: `Bir hayvansever künyeyi okuttu. Konum: ${address}. Haritayı görmek için dokunun.`,
         data: { type: 'QR_SCAN_ALERT' },
         sound: 'default',
         priority: Notifications.AndroidNotificationPriority.MAX,

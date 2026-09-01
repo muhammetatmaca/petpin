@@ -13,6 +13,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import {
   QrCode,
@@ -33,8 +34,18 @@ import {
   Link as LinkIcon,
   X,
   Check,
+  Download,
+  Printer,
+  FileDown,
+  FileUp,
+  FolderArchive,
 } from 'lucide-react-native';
 import { usePet } from '../context/PetContext';
+import {
+  saveQrImageToGallery,
+  printQrCollarTag,
+  exportProfileBackup,
+} from '../services/qrBackupService';
 import { COLORS, SHADOWS } from '../theme/colors';
 
 interface TagScreenProps {
@@ -42,13 +53,15 @@ interface TagScreenProps {
 }
 
 export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
-  const { profile, regenerateTagId, pairPhysicalTag } = usePet();
+  const { profile, updateProfile, regenerateTagId, pairPhysicalTag } = usePet();
   const [showPhoneToFinder, setShowPhoneToFinder] = useState(true);
   const [showWhatsAppToFinder, setShowWhatsAppToFinder] = useState(true);
   const [showMedicalNotes, setShowMedicalNotes] = useState(true);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [pairModalVisible, setPairModalVisible] = useState(false);
+  const [restoreModalVisible, setRestoreModalVisible] = useState(false);
   const [customTagInput, setCustomTagInput] = useState('');
+  const [restoreJsonInput, setRestoreJsonInput] = useState('');
   const [copied, setCopied] = useState(false);
 
   const tagId = profile.tagId;
@@ -59,6 +72,10 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
   )}&phone=${encodeURIComponent(
     profile.ownerPhone
   )}&wa=${encodeURIComponent(profile.ownerWhatsApp)}`;
+
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
+    publicWebUrl
+  )}&color=0F4C5C&bgcolor=FAFAFA`;
 
   const handleShareTag = async () => {
     try {
@@ -90,6 +107,35 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
       alert('Fiziksel künyeniz başarıyla profilinize bağlandı!');
     } else {
       alert('Lütfen geçerli bir künye seri numarası giriniz.');
+    }
+  };
+
+  const handleSaveToGallery = async () => {
+    await saveQrImageToGallery(qrImageUrl, profile.petName, tagId);
+  };
+
+  const handlePrintTag = async () => {
+    await printQrCollarTag(profile, publicWebUrl);
+  };
+
+  const handleExportBackup = async () => {
+    await exportProfileBackup(profile);
+  };
+
+  const handleRestoreBackup = async () => {
+    try {
+      const parsed = JSON.parse(restoreJsonInput.trim());
+      if (parsed.profile || parsed.petpin_tag_id) {
+        const restoredProfile = parsed.profile || parsed;
+        await updateProfile(restoredProfile);
+        setRestoreModalVisible(false);
+        setRestoreJsonInput('');
+        alert(`✅ ${restoredProfile.petName || 'Profil'} ve ${restoredProfile.tagId || 'Künye'} yedeği başarıyla geri yüklendi!`);
+      } else {
+        alert('Geçersiz yedek içeriği. Lütfen PetPin yedek JSON kodunu yapıştırınız.');
+      }
+    } catch (e) {
+      alert('Yedek JSON metni çözümlenemedi. Lütfen kopyaladığınız yedek kodunu tam olarak yapıştırınız.');
     }
   };
 
@@ -127,11 +173,7 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
           {/* High-Resolution Dynamic QR Graphic */}
           <View style={styles.qrWrapper}>
             <Image
-              source={{
-                uri: `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
-                  publicWebUrl
-                )}&color=0F4C5C&bgcolor=FAFAFA`,
-              }}
+              source={{ uri: qrImageUrl }}
               style={styles.qrImage}
             />
             <View style={styles.qrCenterLogo}>
@@ -163,6 +205,27 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
             </View>
           </TouchableOpacity>
 
+          {/* Tag Quick Actions: Download Image & Print Tag */}
+          <View style={styles.quickExportRow}>
+            <TouchableOpacity
+              style={styles.quickExportBtn}
+              activeOpacity={0.8}
+              onPress={handleSaveToGallery}
+            >
+              <Download size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.quickExportBtnText}>Galeriye Kaydet</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickExportBtn}
+              activeOpacity={0.8}
+              onPress={handlePrintTag}
+            >
+              <Printer size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.quickExportBtnText}>Tasmayı Yazdır / PDF</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Tag ID Actions: Regenerate or Pair Physical Collar */}
           <View style={styles.tagActionsRow}>
             <TouchableOpacity
@@ -188,6 +251,37 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
           </View>
         </View>
 
+        {/* Backup & Restore Tools Card (Yedekleme & Geri Yükleme) */}
+        <View style={styles.backupCard}>
+          <View style={styles.backupHeaderRow}>
+            <FolderArchive size={18} color={COLORS.primary} />
+            <Text style={styles.backupTitle}>Künye & Profil Yedekleme</Text>
+          </View>
+          <Text style={styles.backupSubtitle}>
+            Uygulamayı silseniz bile QR kodunuz ve ayarlarınız kaybolmaz. Yedeğinizi telefonunuza indirebilir veya yedekten geri yükleyebilirsiniz.
+          </Text>
+
+          <View style={styles.backupBtnGroup}>
+            <TouchableOpacity
+              style={styles.backupBtn}
+              activeOpacity={0.8}
+              onPress={handleExportBackup}
+            >
+              <FileDown size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.backupBtnText}>Yedek Al (İndir / Paylaş)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.backupBtn, { backgroundColor: 'rgba(15, 76, 92, 0.06)' }]}
+              activeOpacity={0.8}
+              onPress={() => setRestoreModalVisible(true)}
+            >
+              <FileUp size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+              <Text style={styles.backupBtnText}>Yedekten Yükle</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Finder Preview Trigger Button */}
         <TouchableOpacity
           style={styles.previewFinderButton}
@@ -207,17 +301,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
           </View>
           <ChevronRight size={20} color={COLORS.primary} />
         </TouchableOpacity>
-
-        {/* How It Works Explainer Box */}
-        <View style={styles.infoExplainerCard}>
-          <View style={styles.infoExplainerHeader}>
-            <Info size={18} color={COLORS.primary} />
-            <Text style={styles.infoExplainerTitle}>Bulan Kişi Nasıl Okutur?</Text>
-          </View>
-          <Text style={styles.infoExplainerText}>
-            {profile.petName} kaybolursa, bulan kişinin herhangi bir uygulama yüklemesine gerek yoktur. Telefonunun standart kamera uygulamasını QR koda tutması yeterlidir. Tarandığı anda konum izniyle birlikte GPS noktası doğrudan size bildirilir.
-          </Text>
-        </View>
 
         {/* Finder Privacy & Display Settings */}
         <View style={styles.settingsCard}>
@@ -279,6 +362,55 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
         </View>
       </ScrollView>
 
+      {/* Restore from Backup Modal */}
+      <Modal
+        visible={restoreModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setRestoreModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.pairModalCard}>
+            <View style={styles.pairModalHeader}>
+              <Text style={styles.pairModalTitle}>Yedekten Geri Yükle</Text>
+              <TouchableOpacity
+                style={styles.pairCloseBtn}
+                onPress={() => setRestoreModalVisible(false)}
+              >
+                <X size={20} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.pairModalDesc}>
+              Daha önce aldığınız PetPin yedek dosyasının (JSON) metnini buraya yapıştırarak künye kodunuzu ve profilinizi anında geri yükleyin.
+            </Text>
+
+            <View style={styles.pairInputContainer}>
+              <TextInput
+                style={[styles.pairInput, { height: 110, textAlignVertical: 'top', fontSize: 13 }]}
+                value={restoreJsonInput}
+                onChangeText={setRestoreJsonInput}
+                placeholder='{"petpin_tag_id": "PETPIN-TR-...", "profile": {...}}'
+                placeholderTextColor="#94A3B8"
+                multiline={true}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.pairSubmitBtn}
+              activeOpacity={0.88}
+              onPress={handleRestoreBackup}
+            >
+              <Check size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.pairSubmitBtnText}>Yedeği Yükle & Kurtar</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* Pair Physical Tag Modal */}
       <Modal
         visible={pairModalVisible}
@@ -337,7 +469,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.browserModalContainer}>
-            {/* Fake Mobile Browser Address Bar */}
             <View style={styles.browserHeader}>
               <View style={styles.browserUrlPill}>
                 <ShieldCheck size={14} color={COLORS.emerald} style={{ marginRight: 6 }} />
@@ -358,7 +489,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
               contentContainerStyle={styles.webPreviewContent}
               showsVerticalScrollIndicator={false}
             >
-              {/* Web Banner: GPS Sent Confirmation */}
               <View style={styles.webSuccessBanner}>
                 <View style={styles.webSuccessIcon}>
                   <CheckCircle2 size={24} color={COLORS.emerald} />
@@ -373,7 +503,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
                 </View>
               </View>
 
-              {/* Pet Identity on Finder Web */}
               <View style={styles.webPetCard}>
                 <Image
                   source={{ uri: profile.petPhoto }}
@@ -389,7 +518,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
                 </View>
               </View>
 
-              {/* Medical Notice */}
               {showMedicalNotes && profile.medicalNotes ? (
                 <View style={styles.webAlertBox}>
                   <AlertCircle size={16} color={COLORS.coral} style={{ marginRight: 8 }} />
@@ -399,7 +527,6 @@ export const TagScreen: React.FC<TagScreenProps> = ({ onViewAlerts }) => {
                 </View>
               ) : null}
 
-              {/* Action Buttons for Finder */}
               <View style={styles.webActionStack}>
                 {showPhoneToFinder && profile.ownerPhone ? (
                   <TouchableOpacity
@@ -487,7 +614,7 @@ const styles = StyleSheet.create({
   tagShowcaseCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 32,
-    padding: 24,
+    padding: 22,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.borderLight,
@@ -499,7 +626,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   nfcBadge: {
     flexDirection: 'row',
@@ -524,8 +651,8 @@ const styles = StyleSheet.create({
   },
   qrWrapper: {
     position: 'relative',
-    width: 220,
-    height: 220,
+    width: 210,
+    height: 210,
     borderRadius: 24,
     backgroundColor: '#FAFAFA',
     padding: 12,
@@ -533,7 +660,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15, 76, 92, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
     ...SHADOWS.subtle,
   },
   qrImage: {
@@ -569,7 +696,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   tagIdText: {
     fontSize: 13,
@@ -585,6 +712,28 @@ const styles = StyleSheet.create({
   },
   copyBadgeText: {
     fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  quickExportRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginBottom: 10,
+  },
+  quickExportBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 76, 92, 0.07)',
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 76, 92, 0.1)',
+  },
+  quickExportBtnText: {
+    fontSize: 11.5,
     fontWeight: '700',
     color: COLORS.primary,
   },
@@ -604,6 +753,50 @@ const styles = StyleSheet.create({
   },
   tagActionBtnText: {
     fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  backupCard: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: 16,
+    ...SHADOWS.subtle,
+  },
+  backupHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  backupTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  backupSubtitle: {
+    fontSize: 11.5,
+    color: COLORS.textSecondary,
+    lineHeight: 16,
+    marginBottom: 14,
+  },
+  backupBtnGroup: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  backupBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 11,
+    borderRadius: 14,
+  },
+  backupBtnText: {
+    fontSize: 11.5,
     fontWeight: '700',
     color: COLORS.primary,
   },
@@ -640,30 +833,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textSecondary,
     lineHeight: 15,
-  },
-  infoExplainerCard: {
-    backgroundColor: 'rgba(15, 76, 92, 0.05)',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(15, 76, 92, 0.1)',
-    marginBottom: 16,
-  },
-  infoExplainerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  infoExplainerTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  infoExplainerText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    lineHeight: 17,
   },
   settingsCard: {
     backgroundColor: COLORS.cardBg,
@@ -752,11 +921,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.primary,
-    fontFamily: 'monospace',
-    letterSpacing: 1,
   },
   pairSubmitBtn: {
     flexDirection: 'row',
