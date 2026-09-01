@@ -37,11 +37,13 @@ import { COLORS, SHADOWS } from '../theme/colors';
 interface ProfileScreenProps {
   onBackPress: () => void;
   onTagPress: () => void;
+  onShowOnboarding?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onBackPress,
   onTagPress,
+  onShowOnboarding,
 }) => {
   const { profile, updateProfile, pickPetPhoto, toggleLostMode } = usePet();
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -365,6 +367,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Edit3 size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
           <Text style={styles.editProfileCtaText}>Bilgileri Düzenle & Güncelle</Text>
         </TouchableOpacity>
+
+        {/* Replay Onboarding Flow Button */}
+        {onShowOnboarding && (
+          <TouchableOpacity
+            style={styles.replayOnboardingBtn}
+            activeOpacity={0.8}
+            onPress={onShowOnboarding}
+          >
+            <Sparkles size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.replayOnboardingBtnText}>Uygulama Tanıtımını İzle (Cosmic Onboarding)</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Edit Profile Full Modal */}
@@ -775,12 +789,28 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 20,
     ...SHADOWS.glowTeal,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   editProfileCtaText: {
     fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  replayOnboardingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 76, 92, 0.07)',
+    paddingVertical: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 76, 92, 0.15)',
+    marginBottom: 24,
+  },
+  replayOnboardingBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   modalOverlay: {
     flex: 1,

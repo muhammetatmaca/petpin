@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   SafeAreaProvider,
   SafeAreaView,
@@ -17,12 +18,41 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TagScreen } from './src/screens/TagScreen';
 import { AlertScreen } from './src/screens/AlertScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { COLORS, SHADOWS } from './src/theme/colors';
+
+const ONBOARDING_KEY = '@petpin_onboarding_completed_v2';
 
 function MainApp() {
   const { activeScanAlert } = usePet();
   const [activeTab, setActiveTab] = useState<'map' | 'tag' | 'alert' | 'profile'>('map');
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    async function checkOnboardingStatus() {
+      try {
+        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+        setShowOnboarding(value !== 'true');
+      } catch {
+        setShowOnboarding(false);
+      }
+    }
+    checkOnboardingStatus();
+  }, []);
+
+  const handleCompleteOnboarding = async () => {
+    setShowOnboarding(false);
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    } catch {
+      // storage fallback
+    }
+  };
+
+  if (showOnboarding === true) {
+    return <OnboardingScreen onComplete={handleCompleteOnboarding} />;
+  }
 
   const bottomNavOffset = insets.bottom > 0 ? insets.bottom + 4 : 18;
 
@@ -59,6 +89,7 @@ function MainApp() {
           <ProfileScreen
             onBackPress={() => setActiveTab('map')}
             onTagPress={() => setActiveTab('tag')}
+            onShowOnboarding={() => setShowOnboarding(true)}
           />
         )}
       </View>
