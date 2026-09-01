@@ -27,7 +27,7 @@ import {
   Heart,
   MessageCircle,
 } from 'lucide-react-native';
-import { CosmicBackground } from '../components/CosmicBackground';
+import { PastelBackground } from '../components/PastelBackground';
 import { SHADOWS } from '../theme/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -35,7 +35,10 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface RevolutOnboardingSlide {
   id: string;
   tag: string;
-  tagColor: string;
+  tagBg: string;
+  tagBorder: string;
+  tagTextColor: string;
+  tagDotColor: string;
   title: string;
   subtitle: string;
   photo: string;
@@ -45,15 +48,20 @@ interface RevolutOnboardingSlide {
     icon: any;
     text: string;
     subtext: string;
+    iconBg: string;
+    iconColor: string;
   };
   features: string[];
 }
 
-const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
+const PASTEL_SLIDES: RevolutOnboardingSlide[] = [
   {
     id: '1',
     tag: 'AKILLI KÜNYE SİSTEMİ',
-    tagColor: '#10B981',
+    tagBg: '#DCFCE7',
+    tagBorder: '#86EFAC',
+    tagTextColor: '#047857',
+    tagDotColor: '#10B981',
     title: 'Dostunuz Kaybolduğunda\nSaniyeler İçinde Yanınızda',
     subtitle:
       'PetPin akıllı QR künyesi ile arama karmaşası biter. Telefon kamerasıyla okutan herkes tek dokunuşla size ulaşır.',
@@ -64,17 +72,22 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
       icon: QrCode,
       text: 'Akıllı QR Künye',
       subtext: 'Kamerayla anında tanır',
+      iconBg: '#DCFCE7',
+      iconColor: '#059669',
     },
     features: [
       'Uygulamasız doğrudan tanıma',
-      'Tüm akıllı telefonlarla uyumlu',
+      'Tüm akıllı telefonlarla %100 uyumlu',
       'Sıfır abonelik & ömür boyu kullanım',
     ],
   },
   {
     id: '2',
     tag: 'SIFIR ŞARJ & PİL',
-    tagColor: '#F59E0B',
+    tagBg: '#FEF3C7',
+    tagBorder: '#FDE68A',
+    tagTextColor: '#B45309',
+    tagDotColor: '#F59E0B',
     title: 'Asla Şarjı Bitmez,\nYarı Yolda Bırakmaz',
     subtitle:
       'Geleneksel ağır GPS tasmaların aksine pil veya şarj istemez. Kediniz ve köpeğiniz için tüy kadar hafif ve %100 su geçirmezdir.',
@@ -85,6 +98,8 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
       icon: Zap,
       text: 'Sıfır Pil İhtiyacı',
       subtext: 'Ömür boyu kesintisiz',
+      iconBg: '#FEF3C7',
+      iconColor: '#D97706',
     },
     features: [
       'Günde bir şarj etme derdine son',
@@ -95,7 +110,10 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
   {
     id: '3',
     tag: 'CANLI GPS TELEMETRİ',
-    tagColor: '#38BDF8',
+    tagBg: '#E0F2FE',
+    tagBorder: '#BAE6FD',
+    tagTextColor: '#0369A1',
+    tagDotColor: '#0284C7',
     title: 'Okutan Kişinin Konumu\nAnında Haritanızda',
     subtitle:
       'Dostunuzu bulan kişi künyeyi okuttuğu an, izin verdiği canlı GPS koordinatları ve tam sokak adresi telefonunuza bildirim olarak düşer.',
@@ -106,17 +124,22 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
       icon: MapPin,
       text: 'Canlı Konum Bildirimi',
       subtext: '±3m yüksek hassasiyet',
+      iconBg: '#E0F2FE',
+      iconColor: '#0284C7',
     },
     features: [
       'Anlık sokak adresi & zaman damgası',
       'Tek tıkla navigasyon ve rota tarifi',
-      'Sesli ve titreşimli acil uyarı',
+      'Sesli ve titreşimli anlık uyarı',
     ],
   },
   {
     id: '4',
     tag: 'TEK DOKUNUŞLA SAHİBE ULAŞIM',
-    tagColor: '#10B981',
+    tagBg: '#D1FAE5',
+    tagBorder: '#A7F3D0',
+    tagTextColor: '#047857',
+    tagDotColor: '#059669',
     title: 'WhatsApp, Arama ve\nAcil Veteriner Bilgisi',
     subtitle:
       'Bulan kişi hiçbir uygulama indirmeden tek tıkla sizi telefonla arayabilir, WhatsApp’tan yazabilir ve varsa acil sağlık alerji notlarını görebilir.',
@@ -127,6 +150,8 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
       icon: PhoneCall,
       text: 'Hızlı Arama & WhatsApp',
       subtext: 'Uygulama gerektirmez',
+      iconBg: '#DCFCE7',
+      iconColor: '#059669',
     },
     features: [
       'Doğrudan sahibini arama butonu',
@@ -137,17 +162,22 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
   {
     id: '5',
     tag: 'KAYIP MODU & ALARM AĞI',
-    tagColor: '#EF4444',
+    tagBg: '#FFE4E6',
+    tagBorder: '#FECDD3',
+    tagTextColor: '#BE123C',
+    tagDotColor: '#E11D48',
     title: 'Kayıp Anında Tüm\nGüvenlik Kalkanı Açılır',
     subtitle:
       'Uygulamadan Kayıp Modunu açın; künye okutulduğu anda telefonunuz acil durum alarmı verir, haritada rotayı çizer ve bulucuya talimatları gösterir.',
     photo: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=800&q=80',
-    petBadgeName: 'Max • Alman Kurdu',
+    petBadgeName: 'Max • Asil Alman Kurdu',
     petBadgeStatus: 'Kayıp Kalkanı Aktif',
     floatingPill: {
       icon: AlertTriangle,
       text: 'Acil SOS Kalkanı',
       subtext: 'Öncelikli alarm modu',
+      iconBg: '#FFE4E6',
+      iconColor: '#E11D48',
     },
     features: [
       'Yüksek öncelikli acil durum uyarısı',
@@ -158,7 +188,10 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
   {
     id: '6',
     tag: 'PETPIN AİLESİNE HOŞ GELDİNİZ',
-    tagColor: '#A855F7',
+    tagBg: '#F3E8FF',
+    tagBorder: '#DDD6FE',
+    tagTextColor: '#6D28D9',
+    tagDotColor: '#7C3AED',
     title: 'Dostunuzun Dünyasını\nKorumaya Hazır mısınız?',
     subtitle:
       'Künyenizi oluşturun, PDF çıktısını alın veya galerinizden paylaşın. Dostunuz artık her adımda güvende.',
@@ -169,6 +202,8 @@ const REVOLUT_SLIDES: RevolutOnboardingSlide[] = [
       icon: Sparkles,
       text: 'Hemen Başlayın',
       subtext: 'Ücretsiz & Sınırsız',
+      iconBg: '#F3E8FF',
+      iconColor: '#7C3AED',
     },
     features: [
       'Yazdırılabilir A4 künye şablonu',
@@ -189,18 +224,18 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / SCREEN_WIDTH);
-    if (index !== currentIndex && index >= 0 && index < REVOLUT_SLIDES.length) {
+    if (index !== currentIndex && index >= 0 && index < PASTEL_SLIDES.length) {
       setCurrentIndex(index);
       try {
         Vibration.vibrate(10);
       } catch {
-        // haptic fallback
+        // fallback
       }
     }
   };
 
   const handleNext = () => {
-    if (currentIndex < REVOLUT_SLIDES.length - 1) {
+    if (currentIndex < PASTEL_SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({
         index: currentIndex + 1,
         animated: true,
@@ -208,13 +243,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       try {
         Vibration.vibrate(15);
       } catch {
-        // haptic fallback
+        // fallback
       }
     } else {
       try {
         Vibration.vibrate([0, 30, 60, 30]);
       } catch {
-        // haptic fallback
+        // fallback
       }
       onComplete();
     }
@@ -224,35 +259,35 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     try {
       Vibration.vibrate(12);
     } catch {
-      // haptic fallback
+      // fallback
     }
     onComplete();
   };
 
-  const isLastSlide = currentIndex === REVOLUT_SLIDES.length - 1;
+  const isLastSlide = currentIndex === PASTEL_SLIDES.length - 1;
 
   const renderSlideItem = ({ item }: { item: RevolutOnboardingSlide }) => {
     const PillIcon = item.floatingPill.icon;
 
     return (
       <View style={styles.slideWrapper}>
-        {/* 1. Revolut-Style Hero Photo Card with Glowing Frosted Badge */}
+        {/* 1. Pastel Revolut Hero Pet Photo Card with Floating Glass Pill */}
         <View style={styles.photoContainer}>
           <Image source={{ uri: item.photo }} style={styles.petHeroImage} resizeMode="cover" />
 
-          {/* Gradient Dark Overlay on Image Bottom */}
+          {/* Soft Bottom Gradient Scrim */}
           <View style={styles.photoGradientScrim} />
 
           {/* Top Pet Status Pill */}
           <View style={styles.petPhotoStatusPill}>
-            <View style={[styles.liveStatusDot, { backgroundColor: item.tagColor }]} />
+            <View style={[styles.liveStatusDot, { backgroundColor: item.tagDotColor }]} />
             <Text style={styles.petPhotoStatusText}>{item.petBadgeName}</Text>
           </View>
 
-          {/* Floating Glassmorphic Revolut Feature Widget */}
+          {/* Floating Pastel Glass Pill */}
           <View style={styles.floatingGlassPill}>
-            <View style={[styles.floatingIconCircle, { backgroundColor: `${item.tagColor}25` }]}>
-              <PillIcon size={18} color={item.tagColor} strokeWidth={2.4} />
+            <View style={[styles.floatingIconCircle, { backgroundColor: item.floatingPill.iconBg }]}>
+              <PillIcon size={18} color={item.floatingPill.iconColor} strokeWidth={2.4} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.floatingPillTitle}>{item.floatingPill.text}</Text>
@@ -261,24 +296,29 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           </View>
         </View>
 
-        {/* 2. Revolut-Style Bottom Content Card */}
+        {/* 2. Crisp Milk-Glass Bottom Content Card */}
         <View style={styles.contentCard}>
-          {/* Tag Badge */}
-          <View style={[styles.categoryBadge, { borderColor: `${item.tagColor}35` }]}>
-            <View style={[styles.categoryDot, { backgroundColor: item.tagColor }]} />
-            <Text style={[styles.categoryBadgeText, { color: item.tagColor }]}>{item.tag}</Text>
+          {/* Pastel Category Badge */}
+          <View
+            style={[
+              styles.categoryBadge,
+              { backgroundColor: item.tagBg, borderColor: item.tagBorder },
+            ]}
+          >
+            <View style={[styles.categoryDot, { backgroundColor: item.tagDotColor }]} />
+            <Text style={[styles.categoryBadgeText, { color: item.tagTextColor }]}>{item.tag}</Text>
           </View>
 
-          {/* Bold Revolut Title & Subtitle */}
+          {/* Bold Charcoal Revolut Typography */}
           <Text style={styles.slideTitle}>{item.title}</Text>
           <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
 
-          {/* Revolut Feature Highlight Checklist */}
+          {/* Pastel Feature Checklist */}
           <View style={styles.featuresList}>
             {item.features.map((feat, idx) => (
               <View key={idx} style={styles.featureRow}>
-                <View style={[styles.featureCheckCircle, { backgroundColor: `${item.tagColor}20` }]}>
-                  <Check size={12} color={item.tagColor} strokeWidth={3} />
+                <View style={[styles.featureCheckCircle, { backgroundColor: item.tagBg }]}>
+                  <Check size={12} color={item.tagTextColor} strokeWidth={3} />
                 </View>
                 <Text style={styles.featureText}>{feat}</Text>
               </View>
@@ -290,13 +330,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   };
 
   return (
-    <CosmicBackground>
+    <PastelBackground>
       <SafeAreaView style={styles.safeContainer} edges={['top', 'bottom', 'left', 'right']}>
         {/* Top Header with Revolut Segmented Story Progress Bar */}
         <View style={styles.topHeader}>
           {/* Segmented Progress Bars */}
           <View style={styles.progressSegmentsRow}>
-            {REVOLUT_SLIDES.map((_, idx) => {
+            {PASTEL_SLIDES.map((_, idx) => {
               const isPast = idx < currentIndex;
               const isCurrent = idx === currentIndex;
               return (
@@ -333,7 +373,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         {/* Slides Carousel */}
         <FlatList
           ref={flatListRef}
-          data={REVOLUT_SLIDES}
+          data={PASTEL_SLIDES}
           renderItem={renderSlideItem}
           keyExtractor={(item) => item.id}
           horizontal
@@ -353,7 +393,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           style={styles.carouselList}
         />
 
-        {/* Bottom Revolut-Style Large Action CTA */}
+        {/* Bottom Action CTA */}
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={[styles.actionBtn, isLastSlide ? styles.actionBtnGetStarted : styles.actionBtnNext]}
@@ -365,7 +405,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </CosmicBackground>
+    </PastelBackground>
   );
 };
 
@@ -387,8 +427,8 @@ const styles = StyleSheet.create({
   },
   segmentTrack: {
     flex: 1,
-    height: 3.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    height: 4,
+    backgroundColor: 'rgba(15, 23, 42, 0.08)',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -398,15 +438,11 @@ const styles = StyleSheet.create({
   },
   segmentFillFull: {
     width: '100%',
-    backgroundColor: '#10B981',
+    backgroundColor: '#0F4C5C',
   },
   segmentFillCurrent: {
     width: '100%',
-    backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
+    backgroundColor: '#0F4C5C',
   },
   navRow: {
     flexDirection: 'row',
@@ -422,30 +458,26 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
+    backgroundColor: '#0F4C5C',
   },
   brandTitle: {
     fontSize: 19,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#0F172A',
     letterSpacing: -0.4,
   },
   skipBtn: {
     paddingVertical: 5,
     paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(15, 23, 42, 0.08)',
   },
   skipBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: '#64748B',
   },
   carouselList: {
     flex: 1,
@@ -457,15 +489,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // Revolut Hero Pet Photo Container
+  // Hero Pet Photo Card
   photoContainer: {
     width: '100%',
     height: SCREEN_HEIGHT * 0.32,
     borderRadius: 28,
     overflow: 'hidden',
     position: 'relative',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: '#E2E8F0',
     ...SHADOWS.card,
   },
   petHeroImage: {
@@ -478,7 +511,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 90,
-    backgroundColor: 'rgba(4, 9, 20, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
   petPhotoStatusPill: {
     position: 'absolute',
@@ -486,12 +519,13 @@ const styles = StyleSheet.create({
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(7, 14, 26, 0.82)',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 1)',
+    ...SHADOWS.subtle,
   },
   liveStatusDot: {
     width: 7,
@@ -502,7 +536,7 @@ const styles = StyleSheet.create({
   petPhotoStatusText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#0F172A',
   },
   floatingGlassPill: {
     position: 'absolute',
@@ -511,12 +545,13 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(10, 20, 36, 0.88)',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
     borderRadius: 20,
     padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 1)',
     gap: 10,
+    ...SHADOWS.subtle,
   },
   floatingIconCircle: {
     width: 36,
@@ -528,21 +563,21 @@ const styles = StyleSheet.create({
   floatingPillTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#0F172A',
   },
   floatingPillSub: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.65)',
+    color: '#64748B',
     fontWeight: '600',
   },
 
-  // Revolut Bottom Content Card
+  // Bottom Content Card (Crisp Milk-Glass)
   contentCard: {
-    backgroundColor: 'rgba(10, 18, 32, 0.82)',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: 28,
     padding: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 1)',
     marginTop: 10,
     ...SHADOWS.card,
   },
@@ -553,7 +588,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     marginBottom: 8,
   },
@@ -571,14 +605,14 @@ const styles = StyleSheet.create({
   slideTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#0F172A',
     lineHeight: 26,
     marginBottom: 6,
     letterSpacing: -0.4,
   },
   slideSubtitle: {
     fontSize: 12.5,
-    color: 'rgba(255, 255, 255, 0.68)',
+    color: '#475569',
     lineHeight: 18,
     marginBottom: 12,
   },
@@ -586,7 +620,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: 'rgba(15, 23, 42, 0.06)',
   },
   featureRow: {
     flexDirection: 'row',
@@ -603,7 +637,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.88)',
+    color: '#1E293B',
   },
 
   // Bottom CTA Bar
@@ -622,16 +656,14 @@ const styles = StyleSheet.create({
   },
   actionBtnNext: {
     backgroundColor: '#0F4C5C',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    ...SHADOWS.subtle,
+    ...SHADOWS.glowTeal,
   },
   actionBtnGetStarted: {
     backgroundColor: '#10B981',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
   },
   actionBtnText: {
     fontSize: 15,
