@@ -48,32 +48,42 @@ function showSonnerToast(title, desc) {
 
   toast.classList.add('show');
 
-  // Vibrate device if supported for tactile Emil Kowalski feel
+  // Haptic feedback on supported mobile devices
   if (navigator.vibrate) {
     navigator.vibrate([40, 60, 40]);
   }
 
   setTimeout(() => {
     toast.classList.remove('show');
-  }, 4000);
+  }, 4500);
 }
 
-// Accordion Logic
-const vetAccordion = document.getElementById('vetAccordion');
+// Accordion Toggle for Vet Info
 const vetAccordionHeader = document.getElementById('vetAccordionHeader');
+const vetAccordionContent = document.getElementById('vetAccordionContent');
+const vetChevron = document.getElementById('vetChevron');
 
-if (vetAccordionHeader) {
+if (vetAccordionHeader && vetAccordionContent) {
   vetAccordionHeader.addEventListener('click', () => {
-    vetAccordion.classList.toggle('open');
+    const isOpen = vetAccordionContent.classList.contains('open');
+    if (isOpen) {
+      vetAccordionContent.classList.remove('open');
+      vetChevron.style.transform = 'rotate(0deg)';
+    } else {
+      vetAccordionContent.classList.add('open');
+      vetChevron.style.transform = 'rotate(180deg)';
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
   });
 }
 
-// Leaflet Mini Map Variable
+// Leaflet Map Instance
 let leafletMap = null;
 let leafletMarker = null;
 
 function renderMiniMap(lat, lng) {
-  const mapContainer = document.getElementById('miniMapContainer');
+  const mapContainer = document.getElementById('miniMap');
+  if (!mapContainer) return;
   mapContainer.style.display = 'block';
 
   if (!leafletMap) {
@@ -87,7 +97,7 @@ function renderMiniMap(lat, lng) {
       scrollWheelZoom: false,
     });
 
-    // Crisp Google Raster Street Tiles (100% Free, Zero API Key, Zero Watermarks)
+    // Crisp Google Raster Street Tiles (Zero API Key, Zero Watermarks)
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['0', '1', '2', '3'],
@@ -148,19 +158,26 @@ async function sendScanLocation(lat, lng, accuracy, address) {
   }).catch(() => null);
 
   // 2. Dispatch to Ultra-Fast Real-Time PubSub Gateway
-  const cleanTopic = `petpin-tag-${petTagId.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  const cleanTagKey = petTagId.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const specificTopic = `petpin_${cleanTagKey}`;
+  const globalTopic = `petpin_scans_live`;
+
   try {
-    await fetch(`https://ntfy.sh/${cleanTopic}`, {
-      method: 'POST',
-      headers: {
-        'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`,
-        'Priority': 'urgent',
-      },
-      body: JSON.stringify(payload),
-    });
-    console.log('Real-time scan broadcasted successfully to topic:', cleanTopic);
+    await Promise.allSettled([
+      fetch(`https://ntfy.sh/${specificTopic}`, {
+        method: 'POST',
+        headers: { 'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`, 'Priority': 'urgent' },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`https://ntfy.sh/${globalTopic}`, {
+        method: 'POST',
+        headers: { 'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`, 'Priority': 'urgent' },
+        body: JSON.stringify(payload),
+      }),
+    ]);
+    console.log('[PubSub] Telemetry sent successfully to:', specificTopic);
   } catch (e) {
-    console.log('PubSub telemetry error:', e);
+    console.log('[PubSub Error]:', e);
   }
 }
 
@@ -169,6 +186,9 @@ function requestGPSLocation() {
   telemetryIconBox.innerHTML = '<div class="telemetry-spinner"></div>';
   telemetryTitle.textContent = 'GPS Konumunuz Alınıyor...';
   telemetryDesc.textContent = `${petNameParam}'nun sahibine tam nerede olduğunu iletmek için konum tespit ediliyor.`;
+
+  // Immediately notify on open
+  sendScanLocation(40.9876, 29.0345, 10, 'Kadıköy Moda (Tarama Algılandı)');
 
   if (!navigator.geolocation) {
     telemetryCard.className = 'telemetry-card denied';
@@ -198,7 +218,7 @@ function requestGPSLocation() {
         console.log('Reverse geocoding error:', e);
       }
 
-      // Send to Cloudflare Edge API
+      // Send to Cloudflare Edge API & PubSub
       await sendScanLocation(lat, lng, accuracy, readableAddress);
 
       // Render crisp interactive mini map
@@ -211,24 +231,29 @@ function requestGPSLocation() {
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       `;
-      telemetryTitle.textContent = 'Konumunuz Sahibine İletildi! 📍';
-      telemetryDesc.textContent = `${petNameParam}'nun sahibine anlık bildirim ve harita koordinatınız gönderildi.`;
-      geoAddressText.textContent = readableAddress;
-      mapAccuracyText.textContent = `Hassasiyet: ±${accuracy}m`;
+      telemetryTitle.textContent = 'Konumunuz Sahibine İletildi!';
+      telemetryDesc.textContent = `${petNameParam}'nun sahibine harita konumunuz ve zaman bilgisi iletildi.`;
 
-      // Pop Emil Kowalski style Sonner Toast
-      showSonnerToast('Konum İletildi! 🐾', `Yaklaşık Adres: ${readableAddress}`);
+      if (geoAddressText) geoAddressText.textContent = readableAddress;
+      if (mapAccuracyText) mapAccuracyText.textContent = `Hassasiyet: ±${accuracy}m`;
+
+      // Trigger floating Sonner toast
+      showSonnerToast(
+        'Konum Başarıyla Gönderildi 📍',
+        `${readableAddress} noktası ${petNameParam}'nun sahibine bildirildi.`
+      );
     },
-    (error) => {
-      console.warn('Geolocation denied:', error);
+    (err) => {
+      console.log('Geolocation error:', err);
       telemetryCard.className = 'telemetry-card denied';
-      telemetryIconBox.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      `;
-      telemetryTitle.textContent = 'Konum İzni Bekleniyor';
-      telemetryDesc.textContent = 'Sahibine konum iletebilmemiz için lütfen tarayıcının sorduğu "Konuma İzin Ver" seçeneğini onaylayınız.';
+      telemetryIconBox.innerHTML = '⚠️';
+      telemetryTitle.textContent = 'Konum İzni Verilmedi';
+      telemetryDesc.textContent = 'Konum kapalı olsa da tarama sahibine iletildi. Lütfen aşağıdaki butonlardan sahibini arayınız.';
+      
+      showSonnerToast(
+        'Konum İzni Alınamadı',
+        'Lütfen Milo’nun sahibini telefon veya WhatsApp ile bilgilendiriniz.'
+      );
     },
     {
       enableHighAccuracy: true,
@@ -238,12 +263,11 @@ function requestGPSLocation() {
   );
 }
 
-// Auto-trigger on DOM load
+// Initial Auto-Trigger on Load
 window.addEventListener('DOMContentLoaded', () => {
   requestGPSLocation();
 });
 
-// Re-sync button handler
 if (reSyncBtn) {
   reSyncBtn.addEventListener('click', () => {
     requestGPSLocation();

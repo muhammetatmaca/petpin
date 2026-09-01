@@ -98,45 +98,66 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     registerForRemotePushTokenAsync(profile.tagId);
 
-    const cleanTopic = `petpin-tag-${profile.tagId.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    const cleanTagKey = profile.tagId.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const specificTopic = `petpin_${cleanTagKey}`;
+    const globalTopic = `petpin_scans_live`;
 
     async function pollLiveScans() {
       try {
-        // 1. Ultra-fast PubSub Gateway Poll
-        const ntfyRes = await fetch(`https://ntfy.sh/${cleanTopic}/json?poll=1`);
-        const ntfyText = await ntfyRes.text();
+        // 1. Ultra-fast PubSub Gateway Poll (Specific & Global)
+        const [specificRes, globalRes] = await Promise.allSettled([
+          fetch(`https://ntfy.sh/${specificTopic}/json?poll=1&since=3m`),
+          fetch(`https://ntfy.sh/${globalTopic}/json?poll=1&since=3m`),
+        ]);
 
-        if (ntfyText && ntfyText.trim()) {
-          const lines = ntfyText.trim().split('\n');
-          const latestLine = lines[lines.length - 1];
-          const parsedEvent = JSON.parse(latestLine);
+        const rawTexts: string[] = [];
+        if (specificRes.status === 'fulfilled') {
+          const t = await specificRes.value.text();
+          if (t && t.trim()) rawTexts.push(t.trim());
+        }
+        if (globalRes.status === 'fulfilled') {
+          const t = await globalRes.value.text();
+          if (t && t.trim()) rawTexts.push(t.trim());
+        }
 
-          if (parsedEvent && parsedEvent.message) {
-            let scanData: any = null;
+        for (const rawText of rawTexts) {
+          const lines = rawText.split('\n');
+          for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i];
+            if (!line) continue;
             try {
-              scanData = JSON.parse(parsedEvent.message);
+              const parsedEvent = JSON.parse(line);
+              if (parsedEvent && parsedEvent.message) {
+                let scanData: any = null;
+                try {
+                  scanData = JSON.parse(parsedEvent.message);
+                } catch {
+                  scanData = parsedEvent.data || null;
+                }
+
+                if (scanData && scanData.latitude && scanData.id !== lastProcessedScanIdRef.current) {
+                  lastProcessedScanIdRef.current = scanData.id || String(parsedEvent.time);
+                  const incomingScan: ScanAlert = {
+                    id: scanData.id || String(parsedEvent.time),
+                    tag_id: scanData.tag_id || profile.tagId,
+                    pet_name: scanData.pet_name || profile.petName,
+                    latitude: Number(scanData.latitude),
+                    longitude: Number(scanData.longitude),
+                    accuracy: scanData.accuracy || '±4m (Yüksek)',
+                    address: scanData.address || 'Kadıköy, İstanbul',
+                    device: scanData.device || 'Mobil Web',
+                    timestamp: scanData.timestamp || new Date().toISOString(),
+                    timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  };
+
+                  console.log('[PetContext] Live Scan Detected:', incomingScan.address);
+                  setActiveScanAlert(incomingScan);
+                  await triggerLiveScanNotification(profile.petName, incomingScan.address);
+                  return;
+                }
+              }
             } catch {
-              scanData = parsedEvent.data || null;
-            }
-
-            if (scanData && scanData.latitude && scanData.id !== lastProcessedScanIdRef.current) {
-              lastProcessedScanIdRef.current = scanData.id || String(parsedEvent.time);
-              const incomingScan: ScanAlert = {
-                id: scanData.id || String(parsedEvent.time),
-                tag_id: scanData.tag_id || profile.tagId,
-                pet_name: scanData.pet_name || profile.petName,
-                latitude: Number(scanData.latitude),
-                longitude: Number(scanData.longitude),
-                accuracy: scanData.accuracy || '±4m (Yüksek)',
-                address: scanData.address || 'Kadıköy, İstanbul',
-                device: scanData.device || 'Mobil Web',
-                timestamp: scanData.timestamp || new Date().toISOString(),
-                timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              };
-
-              setActiveScanAlert(incomingScan);
-              await triggerLiveScanNotification(profile.petName, incomingScan.address);
-              return;
+              // line parse fallback
             }
           }
         }
