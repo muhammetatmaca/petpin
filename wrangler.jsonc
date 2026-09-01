@@ -1,8 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "petpin",
+  "main": "worker.js",
   "compatibility_date": "2026-08-28",
-  "pages_build_output_dir": "finder-web",
   "assets": {
     "directory": "finder-web"
   }

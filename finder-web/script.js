@@ -4,7 +4,7 @@
 
 // Parse URL Parameters (allows dynamic rendering per pet)
 const urlParams = new URLSearchParams(window.location.search);
-const petTagId = urlParams.get('id') || 'PETPIN-QR-9821-TR';
+const petTagId = urlParams.get('id') || urlParams.get('tag_id') || 'PETPIN-TR-DEFAULT';
 const petNameParam = urlParams.get('name') || 'Milo';
 const petMetaParam = urlParams.get('meta') || 'Golden Retriever • 3 Yaşında';
 const ownerNameParam = urlParams.get('owner') || 'Sarah Jenkins';
