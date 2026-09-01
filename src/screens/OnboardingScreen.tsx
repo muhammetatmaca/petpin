@@ -383,6 +383,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           showsHorizontalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          getItemLayout={(_, index) => ({
+            length: SCREEN_WIDTH,
+            offset: SCREEN_WIDTH * index,
+            index,
+          })}
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
+          windowSize={3}
+          removeClippedSubviews={true}
           style={styles.carouselList}
         />
 
