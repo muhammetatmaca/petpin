@@ -1,7 +1,9 @@
 /**
  * Cloudflare Pages Edge Serverless Function
- * Handles Real-Time Scan Telemetry for PetPin Smart Tags
+ * Handles Real-Time Scan Telemetry & Remote Push Dispatch (APNs / FCM via Expo)
  */
+
+import { pushTokenStore } from './register-push-token.js';
 
 // In-memory telemetry cache on Edge (persists active scans)
 const scanStore = new Map();
@@ -22,9 +24,11 @@ export async function onRequestPost(context) {
       user_agent,
     } = data;
 
+    const currentTagId = tag_id || 'PETPIN-TR-DEFAULT';
+
     const scanRecord = {
       id: Date.now().toString(),
-      tag_id: tag_id || 'PETPIN-TR-DEFAULT',
+      tag_id: currentTagId,
       pet_name: pet_name || 'Milo',
       latitude: Number(latitude) || 40.9876,
       longitude: Number(longitude) || 29.0345,
@@ -36,15 +40,50 @@ export async function onRequestPost(context) {
     };
 
     // Store latest scan for this tag ID
-    scanStore.set(scanRecord.tag_id, scanRecord);
+    scanStore.set(currentTagId, scanRecord);
 
-    console.log(`[PetPin Scan Broadcast] Tag: ${scanRecord.tag_id} (${scanRecord.pet_name}) at ${scanRecord.address}`);
+    // 🔥 REMOTE PUSH NOTIFICATION DISPATCH (Wakes up phone when app is completely closed)
+    let pushResult = null;
+    const registeredPushToken = pushTokenStore ? pushTokenStore.get(currentTagId) : null;
+
+    if (registeredPushToken) {
+      try {
+        const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: registeredPushToken,
+            sound: 'default',
+            title: `🚨 ${scanRecord.pet_name}’nin Künyesi Okutuldu!`,
+            body: `Bir hayvansever künyeyi okuttu. Konum: ${scanRecord.address}. Haritayı görmek için dokunun.`,
+            data: {
+              type: 'QR_SCAN_ALERT',
+              tag_id: currentTagId,
+              latitude: scanRecord.latitude,
+              longitude: scanRecord.longitude,
+              address: scanRecord.address,
+            },
+            priority: 'high',
+            channelId: 'petpin-alerts',
+          }),
+        });
+        pushResult = await expoRes.json();
+      } catch (pushErr) {
+        console.log('Expo Remote Push Dispatch Error:', pushErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Konum başarıyla alındı ve evcil hayvanın sahibine anlık iletildi.',
         data: scanRecord,
+        push_dispatched: registeredPushToken !== null,
+        push_details: pushResult,
       }),
       {
         status: 200,

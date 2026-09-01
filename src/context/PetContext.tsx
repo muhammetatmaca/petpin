@@ -2,7 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { generateUniqueTagId } from '../utils/tagGenerator';
-import { setupNotificationPermissions, triggerLiveScanNotification } from '../services/notificationService';
+import {
+  setupNotificationPermissions,
+  triggerLiveScanNotification,
+  registerForRemotePushTokenAsync,
+} from '../services/notificationService';
 
 export interface ScanAlert {
   id: string;
@@ -88,9 +92,12 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadSavedProfile();
   }, []);
 
-  // Real-time Cloud Telemetry Listener: Polls Cloudflare Edge for live scans on this tag
+  // Real-time Cloud Telemetry Listener & Remote Push Registration
   useEffect(() => {
     if (!profile.tagId) return;
+
+    // Register device token with Cloudflare for closed-app notifications
+    registerForRemotePushTokenAsync(profile.tagId);
 
     let isPolling = true;
 
