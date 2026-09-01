@@ -1,11 +1,11 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
 import * as Print from 'expo-print';
 import { PetProfile } from '../context/PetContext';
 
 /**
- * Downloads and saves the high-resolution QR Code image to the phone's Photo Gallery
+ * Downloads and shares/saves the high-resolution QR Code image
+ * Uses expo-sharing (built into Expo Go on all devices)
  */
 export async function saveQrImageToGallery(
   qrImageUrl: string,
@@ -13,30 +13,23 @@ export async function saveQrImageToGallery(
   tagId: string
 ): Promise<boolean> {
   try {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== 'granted') {
-      // Fallback to native sharing if media library permission is denied
-      if (await Sharing.isAvailableAsync()) {
-        const fileUri = `${FileSystem.cacheDirectory}${tagId}-qr.png`;
-        const downloadRes = await FileSystem.downloadAsync(qrImageUrl, fileUri);
-        await Sharing.shareAsync(downloadRes.uri);
-        return true;
-      }
-      alert('Fotoğrafı galeriye kaydedebilmek için galeri izni gereklidir.');
-      return false;
-    }
-
-    const fileUri = `${FileSystem.cacheDirectory}${tagId}-qr.png`;
+    const fileUri = `${FileSystem.cacheDirectory}PetPin-${petName}-${tagId}.png`;
     const downloadRes = await FileSystem.downloadAsync(qrImageUrl, fileUri);
 
-    const asset = await MediaLibrary.createAssetAsync(downloadRes.uri);
-    await MediaLibrary.createAlbumAsync('PetPin Künyelerim', asset, false);
-
-    alert(`✅ ${petName}’nin QR Künyesi telefonunuzun Fotoğraflar galerisine başarıyla kaydedildi!`);
-    return true;
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(downloadRes.uri, {
+        mimeType: 'image/png',
+        dialogTitle: `${petName}’nin QR Künyesini Kaydet / Paylaş`,
+        UTI: 'public.png',
+      });
+      return true;
+    } else {
+      alert(`QR Kod indirildi: ${downloadRes.uri}`);
+      return true;
+    }
   } catch (error) {
-    console.log('Error saving QR image:', error);
-    alert('Fotoğraf kaydedilirken bir hata oluştu.');
+    console.log('Error sharing/saving QR image:', error);
+    alert('QR kod indirilirken bir sorun oluştu.');
     return false;
   }
 }
