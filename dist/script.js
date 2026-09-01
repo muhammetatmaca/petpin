@@ -150,34 +150,24 @@ async function sendScanLocation(lat, lng, accuracy, address) {
     device: navigator.userAgent.includes('iPhone') ? 'Mobil Safari / iOS' : 'Mobil Chrome / Android',
   };
 
-  // 1. Dispatch to Cloudflare Worker API
-  fetch('/api/scan', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(() => null);
-
-  // 2. Dispatch to Ultra-Fast Real-Time PubSub Gateway
-  const cleanTagKey = petTagId.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const specificTopic = `petpin_${cleanTagKey}`;
-  const globalTopic = `petpin_scans_live`;
-
   try {
-    await Promise.allSettled([
-      fetch(`https://ntfy.sh/${specificTopic}`, {
-        method: 'POST',
-        headers: { 'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`, 'Priority': 'urgent' },
-        body: JSON.stringify(payload),
-      }),
-      fetch(`https://ntfy.sh/${globalTopic}`, {
-        method: 'POST',
-        headers: { 'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`, 'Priority': 'urgent' },
-        body: JSON.stringify(payload),
-      }),
-    ]);
-    console.log('[PubSub] Telemetry sent successfully to:', specificTopic);
+    // 1. Dispatch relative API
+    fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => null);
+
+    // 2. Dispatch absolute Cloudflare Worker API
+    await fetch('https://petpin.muhammetatmaca79.workers.dev/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[PetPin Telemetry Sent]:', payload.address);
   } catch (e) {
-    console.log('[PubSub Error]:', e);
+    console.log('[Telemetry Error]:', e);
   }
 }
 

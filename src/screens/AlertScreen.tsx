@@ -32,7 +32,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
   onBackPress,
   onNavigatePress,
 }) => {
-  const { profile, activeScanAlert, clearActiveScanAlert, simulateTestScan } = usePet();
+  const { profile, activeScanAlert, clearActiveScanAlert } = usePet();
 
   const handleCallFinder = () => {
     if (profile.ownerPhone) {
@@ -122,18 +122,6 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
                 </Text>
               </View>
             </View>
-
-            {/* Test Simulation Button */}
-            <TouchableOpacity
-              style={styles.testSimulateBtn}
-              activeOpacity={0.8}
-              onPress={simulateTestScan}
-            >
-              <Sparkles size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-              <Text style={styles.testSimulateBtnText}>
-                Tarama Bildirimini Test Et (Simülasyon)
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
 
