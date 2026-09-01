@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>PetPin • Akıllı Künye & Sahip İletişimi</title>
+  
+  <!-- Fonts: Plus Jakarta Sans & Geist Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet Map CSS for crisp Zero-API-Key Mini Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ambient Mesh Glow Background -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <main class="app-wrapper">
+    
+    <!-- Top Navigation Glass Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-logo-glow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <span class="brand-name">PetPin</span>
+        <span class="tag-status-pill">
+          <span class="live-dot"></span>
+          CANLI KÜNYE
+        </span>
+      </div>
+
+      <div class="tag-chip" id="tagChip">
+        <span id="tagIdText">PETPIN-9821</span>
+      </div>
+    </header>
+
+    <!-- Hero Card with Emil Kowalski Spring Motion & Layered Avatar -->
+    <section class="hero-card" id="heroCard">
+      <div class="avatar-container">
+        <div class="radar-pulse radar-1"></div>
+        <div class="radar-pulse radar-2"></div>
+        <div class="avatar-glass-frame">
+          <img id="petAvatar" src="https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=85" alt="Pet Avatar" class="pet-img" />
+          <div class="status-indicator-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-typography">
+        <div class="pet-heading-row">
+          <h1 class="pet-name" id="petName">Milo</h1>
+          <div class="verified-badge" title="Kayıtlı ve Doğrulanmış Çip/Künye">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#0F4C5C" stroke="#FFFFFF" stroke-width="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
+        </div>
+        
+        <p class="pet-subtitle" id="petMeta">Golden Retriever • 3 Yaşında</p>
+        
+        <div class="owner-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span id="ownerName">Sahibi: Sarah Jenkins</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live GPS Transmission Card (Interactive State Machine) -->
+    <section class="telemetry-card" id="telemetryCard">
+      <div class="telemetry-header">
+        <div class="telemetry-icon-box" id="telemetryIconBox">
+          <div class="telemetry-spinner" id="telemetrySpinner"></div>
+        </div>
+        <div class="telemetry-info">
+          <h3 class="telemetry-title" id="telemetryTitle">GPS Konumunuz Alınıyor...</h3>
+          <p class="telemetry-desc" id="telemetryDesc">Milo'nun sahibine tam nerede olduğunu iletmek için konum tespit ediliyor.</p>
+        </div>
+      </div>
+
+      <!-- Embedded Zero-API-Key Mini Map with Smooth Reveal -->
+      <div class="mini-map-container" id="miniMapContainer">
+        <div id="miniMap" class="mini-map"></div>
+        <div class="map-overlay-badge">
+          <span class="live-blink-dot"></span>
+          <span id="mapAccuracyText">Hassasiyet: ±4m</span>
+        </div>
+      </div>
+
+      <div class="telemetry-footer" id="telemetryFooter">
+        <span class="geo-text" id="geoAddressText">Caferağa Mah., Kadıköy / İstanbul</span>
+        <button class="re-sync-btn" id="reSyncBtn" title="Konumu Yenile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Konumu Güncelle</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Medical & Emergency Notice (High Attention Glow) -->
+    <section class="medical-alert-card" id="medicalCard">
+      <div class="medical-alert-header">
+        <div class="medical-badge-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="medical-text-group">
+          <h4 class="medical-title">Acil Sağlık & Alerji Bilgisi</h4>
+          <p class="medical-text" id="medicalText">Tavuk ve buğday alerjisi vardır. Lütfen sadece temiz içme suyu veriniz.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tactile Call & WhatsApp Action Buttons -->
+    <section class="action-grid">
+      <!-- Direct Phone Call Button with Sheen Effect -->
+      <a href="tel:+905552345678" class="action-btn call-primary-btn" id="callBtn">
+        <div class="btn-sheen"></div>
+        <div class="btn-icon-circle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </div>
+        <div class="btn-label-group">
+          <span class="btn-main-label">Sahibi Hemen Ara</span>
+          <span class="btn-sub-label" id="ownerPhoneLabel">+90 555 234 56 78</span>
+        </div>
+        <div class="btn-chevron">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </div>
+      </a>
+
+      <!-- WhatsApp Messaging Card -->
+      <a href="https://wa.me/905552345678" target="_blank" class="action-btn whatsapp-btn" id="whatsappBtn">
+        <div class="btn-icon-circle whatsapp-icon-bg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </div>
+        <div class="btn-label-group">
+          <span class="btn-main-label">WhatsApp ile Yaz & Fotoğraf Gönder</span>
+          <span class="btn-sub-label">Konum ve fotoğrafı anında paylaşın</span>
+        </div>
+        <div class="btn-chevron">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </div>
+      </a>
+    </section>
+
+    <!-- Expandable Registered Vet & Clinic Details -->
+    <section class="vet-accordion" id="vetAccordion">
+      <div class="vet-accordion-header" id="vetAccordionHeader">
+        <div class="vet-icon-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F4C5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="vet-header-text">
+          <span class="vet-header-title">Kayıtlı Veteriner Kliniği</span>
+          <span class="vet-header-desc" id="vetSummaryText">Dr. Aris • Kadıköy Hayvan Kliniği</span>
+        </div>
+        <div class="vet-accordion-arrow" id="vetArrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="vet-accordion-body" id="vetAccordionBody">
+        <div class="vet-body-inner">
+          <p class="vet-clinic-name" id="vetDetailsText">Dr. Aris • Kadıköy Hayvan Kliniği (7/24 Acil Nöbetçi Veteriner)</p>
+          <a href="tel:+902163456789" class="vet-call-link" id="vetCallLink">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Kliniği Ara</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Reassurance & Guarantee -->
+    <footer class="footer">
+      <div class="trust-pill">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>PetPin Güvenli Hayvansever Ağı</span>
+      </div>
+      <p class="footer-note">Bu sayfa Milo'nun ailesine sağ salim kavuşabilmesi için hazırlanmıştır. Yardımlarınız için minnettarız.</p>
+    </footer>
+
+  </main>
+
+  <!-- Emil Kowalski Style Floating Toast (Sonner) -->
+  <div class="sonner-toast" id="sonnerToast">
+    <div class="toast-icon-circle" id="toastIcon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <div class="toast-content">
+      <span class="toast-title" id="toastTitle">Konum İletildi</span>
+      <span class="toast-desc" id="toastDesc">Milo'nun sahibine bildirim gönderildi.</span>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
