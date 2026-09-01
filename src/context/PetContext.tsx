@@ -1,0 +1,122 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+
+export interface PetProfile {
+  petName: string;
+  petBreed: string;
+  petAge: string;
+  petPhoto: string;
+  ownerName: string;
+  ownerPhone: string;
+  ownerWhatsApp: string;
+  vetInfo: string;
+  medicalNotes: string;
+  tagId: string;
+  isLostMode: boolean;
+}
+
+const DEFAULT_PROFILE: PetProfile = {
+  petName: 'Milo',
+  petBreed: 'Golden Retriever',
+  petAge: '3 Yaşında',
+  petPhoto: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=80',
+  ownerName: 'Sarah Jenkins',
+  ownerPhone: '+90 555 234 5678',
+  ownerWhatsApp: '+90 555 234 5678',
+  vetInfo: 'Dr. Aris • Kadıköy Hayvan Kliniği',
+  medicalNotes: 'Tavuk ve buğday alerjisi vardır. Lütfen sadece su veriniz.',
+  tagId: 'PETPIN-QR-9821-TR',
+  isLostMode: false,
+};
+
+const STORAGE_KEY = '@petpin_profile_v1';
+
+interface PetContextType {
+  profile: PetProfile;
+  updateProfile: (updates: Partial<PetProfile>) => Promise<void>;
+  pickPetPhoto: () => Promise<void>;
+  toggleLostMode: () => Promise<void>;
+}
+
+const PetContext = createContext<PetContextType | undefined>(undefined);
+
+export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [profile, setProfile] = useState<PetProfile>(DEFAULT_PROFILE);
+
+  useEffect(() => {
+    async function loadSavedProfile() {
+      try {
+        if (AsyncStorage && AsyncStorage.getItem) {
+          const stored = await AsyncStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            setProfile(JSON.parse(stored));
+          }
+        }
+      } catch {
+        // Fallback to default in-memory state gracefully
+      }
+    }
+    loadSavedProfile();
+  }, []);
+
+  const updateProfile = async (updates: Partial<PetProfile>) => {
+    try {
+      const newProfile = { ...profile, ...updates };
+      setProfile(newProfile);
+      if (AsyncStorage && AsyncStorage.setItem) {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+      }
+    } catch {
+      // In-memory state updated
+    }
+  };
+
+  const toggleLostMode = async () => {
+    await updateProfile({ isLostMode: !profile.isLostMode });
+  };
+
+  const pickPetPhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        alert('Fotoğraf seçebilmek için galeri izni gereklidir.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await updateProfile({ petPhoto: result.assets[0].uri });
+      }
+    } catch (e) {
+      console.log('Error picking image:', e);
+    }
+  };
+
+  return (
+    <PetContext.Provider
+      value={{
+        profile,
+        updateProfile,
+        pickPetPhoto,
+        toggleLostMode,
+      }}
+    >
+      {children}
+    </PetContext.Provider>
+  );
+};
+
+export const usePet = (): PetContextType => {
+  const context = useContext(PetContext);
+  if (!context) {
+    throw new Error('usePet must be used within a PetProvider');
+  }
+  return context;
+};

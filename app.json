@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "PetPin",
+    "slug": "findmypaw",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F4C5C"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.virelon.findmypaw"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F4C5C"
+      },
+      "package": "com.virelon.findmypaw",
+      "targetSdkVersion": 36
+    }
+  }
+}

@@ -1,0 +1,56 @@
+/** One quiet canvas, one ink colour and one warm accent. */
+export const COLORS = {
+  primary: '#1F2937',
+  primaryLight: '#374151',
+  primaryGlow: '#FB6A4A',
+  accentCyan: '#FB6A4A',
+  background: '#F6F4EF',
+  cardBg: '#FFFEFB',
+  cardGlass: 'rgba(255, 254, 251, 0.96)',
+  darkGlass: 'rgba(31, 41, 55, 0.88)',
+  coral: '#E9573F',
+  coralLight: '#FFF0EC',
+  coralBorder: '#F6C4B8',
+  emerald: '#178A63',
+  emeraldLight: '#EAF7F0',
+  emeraldBorder: '#B6E2CF',
+  gold: '#B7791F',
+  goldLight: '#FFF5DC',
+  textPrimary: '#1C1D20',
+  textSecondary: '#65676D',
+  textMuted: '#92949A',
+  borderLight: '#E4E0D8',
+  borderGlass: 'rgba(228, 224, 216, 0.92)',
+  white: '#FFFFFF',
+};
+
+export const SHADOWS = {
+  subtle: {
+    shadowColor: '#1C1D20',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  glowTeal: {
+    shadowColor: '#FB6A4A',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  card: {
+    shadowColor: '#1C1D20',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.09,
+    shadowRadius: 24,
+    elevation: 5,
+  },
+  alert: {
+    shadowColor: '#E9573F',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+};
