@@ -92,17 +92,56 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadSavedProfile();
   }, []);
 
-  // Real-time Cloud Telemetry Listener & Remote Push Registration
+  // Real-time Telemetry Listener (Dual-pipeline: Ultra-fast PubSub + Cloudflare API)
   useEffect(() => {
     if (!profile.tagId) return;
 
-    // Register device token with Cloudflare for closed-app notifications
     registerForRemotePushTokenAsync(profile.tagId);
 
-    let isPolling = true;
+    const cleanTopic = `petpin-tag-${profile.tagId.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 
     async function pollLiveScans() {
       try {
+        // 1. Ultra-fast PubSub Gateway Poll
+        const ntfyRes = await fetch(`https://ntfy.sh/${cleanTopic}/json?poll=1`);
+        const ntfyText = await ntfyRes.text();
+
+        if (ntfyText && ntfyText.trim()) {
+          const lines = ntfyText.trim().split('\n');
+          const latestLine = lines[lines.length - 1];
+          const parsedEvent = JSON.parse(latestLine);
+
+          if (parsedEvent && parsedEvent.message) {
+            let scanData: any = null;
+            try {
+              scanData = JSON.parse(parsedEvent.message);
+            } catch {
+              scanData = parsedEvent.data || null;
+            }
+
+            if (scanData && scanData.latitude && scanData.id !== lastProcessedScanIdRef.current) {
+              lastProcessedScanIdRef.current = scanData.id || String(parsedEvent.time);
+              const incomingScan: ScanAlert = {
+                id: scanData.id || String(parsedEvent.time),
+                tag_id: scanData.tag_id || profile.tagId,
+                pet_name: scanData.pet_name || profile.petName,
+                latitude: Number(scanData.latitude),
+                longitude: Number(scanData.longitude),
+                accuracy: scanData.accuracy || '±4m (Yüksek)',
+                address: scanData.address || 'Kadıköy, İstanbul',
+                device: scanData.device || 'Mobil Web',
+                timestamp: scanData.timestamp || new Date().toISOString(),
+                timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              };
+
+              setActiveScanAlert(incomingScan);
+              await triggerLiveScanNotification(profile.petName, incomingScan.address);
+              return;
+            }
+          }
+        }
+
+        // 2. Cloudflare API Poll
         const res = await fetch(
           `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(
             profile.tagId
@@ -112,13 +151,9 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         if (data && data.success && data.has_scan && data.scan) {
           const incomingScan: ScanAlert = data.scan;
-
-          // Check if this is a new scan we haven't processed yet
           if (incomingScan.id !== lastProcessedScanIdRef.current) {
             lastProcessedScanIdRef.current = incomingScan.id;
             setActiveScanAlert(incomingScan);
-
-            // Trigger instant native sound & push notification
             await triggerLiveScanNotification(
               profile.petName,
               incomingScan.address
@@ -130,14 +165,13 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // Immediate check
+    // Immediate check on mount
     pollLiveScans();
 
-    // Poll every 3.5 seconds
-    const interval = setInterval(pollLiveScans, 3500);
+    // Poll every 2.5 seconds for instant detection
+    const interval = setInterval(pollLiveScans, 2500);
 
     return () => {
-      isPolling = false;
       clearInterval(interval);
     };
   }, [profile.tagId, profile.petName]);

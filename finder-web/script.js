@@ -127,23 +127,40 @@ const mapAccuracyText = document.getElementById('mapAccuracyText');
 const reSyncBtn = document.getElementById('reSyncBtn');
 
 async function sendScanLocation(lat, lng, accuracy, address) {
+  const payload = {
+    id: Date.now().toString(),
+    tag_id: petTagId,
+    pet_name: petNameParam,
+    latitude: lat,
+    longitude: lng,
+    accuracy: accuracy ? `±${accuracy}m` : '±4m (Yüksek)',
+    address: address || 'Kadıköy, İstanbul',
+    timestamp: new Date().toISOString(),
+    timeFormatted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    device: navigator.userAgent.includes('iPhone') ? 'Mobil Safari / iOS' : 'Mobil Chrome / Android',
+  };
+
+  // 1. Dispatch to Cloudflare Worker API
+  fetch('/api/scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => null);
+
+  // 2. Dispatch to Ultra-Fast Real-Time PubSub Gateway
+  const cleanTopic = `petpin-tag-${petTagId.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
   try {
-    await fetch('/api/scan', {
+    await fetch(`https://ntfy.sh/${cleanTopic}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tag_id: petTagId,
-        pet_name: petNameParam,
-        latitude: lat,
-        longitude: lng,
-        accuracy: accuracy,
-        address: address,
-        timestamp: new Date().toISOString(),
-        user_agent: navigator.userAgent,
-      }),
+      headers: {
+        'Title': `🚨 ${petNameParam}’nin Künyesi Okutuldu!`,
+        'Priority': 'urgent',
+      },
+      body: JSON.stringify(payload),
     });
+    console.log('Real-time scan broadcasted successfully to topic:', cleanTopic);
   } catch (e) {
-    console.log('Telemetry dispatch log:', e);
+    console.log('PubSub telemetry error:', e);
   }
 }
 
