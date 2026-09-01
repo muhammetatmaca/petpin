@@ -1,276 +1,273 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   View,
   Dimensions,
-  Animated,
-  Easing,
+  Platform,
 } from 'react-native';
-import Svg, {
-  Defs,
-  RadialGradient,
-  LinearGradient as SvgLinearGradient,
-  Stop,
-  Rect,
-  Circle,
-  G,
-} from 'react-native-svg';
+import { WebView } from 'react-native-webview';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Generate 45 deterministic starry particles
-const STARS = Array.from({ length: 45 }).map((_, i) => ({
-  id: i,
-  cx: ((i * 73 + 17) % SCREEN_WIDTH),
-  cy: ((i * 109 + 29) % SCREEN_HEIGHT),
-  r: (i % 3 === 0 ? 2 : i % 2 === 0 ? 1.4 : 0.9),
-  opacity: (0.35 + (i % 5) * 0.15),
-  pulseSpeed: 1800 + (i % 7) * 450,
-}));
-
 interface CosmicBackgroundProps {
   children?: React.ReactNode;
+  core?: boolean;
+  coreColor?: string;
+  midColor?: string;
+  accentColor?: string;
+  outerColor?: string;
+  detail?: number;
+  brightness?: number;
+  speed?: number;
+  rotation?: number;
 }
 
-export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({ children }) => {
-  // Nebula slow orbital float animations
-  const orb1Anim = useRef(new Animated.Value(0)).current;
-  const orb2Anim = useRef(new Animated.Value(0)).current;
-  const starPulse = useRef(new Animated.Value(0.4)).current;
-  const meteorAnim = useRef(new Animated.Value(0)).current;
+export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
+  children,
+  core = true,
+  coreColor = '#0F4C5C',
+  midColor = '#10B981',
+  accentColor = '#E36414',
+  outerColor = '#9333EA',
+  detail = 20,
+  brightness = 35,
+  speed = 28,
+  rotation = 16,
+}) => {
+  // Generate embedded HTML document running the exact Originkit WebGL GLSL Shader
+  const htmlContent = useMemo(() => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body {
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+              background-color: #040914;
+            }
+            #glCanvas {
+              width: 100%;
+              height: 100%;
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <canvas id="glCanvas"></canvas>
+          <script>
+            // Originkit Cosmic BG GLSL Core Shader Engine
+            const VERT = \`
+              attribute vec4 a_pos;
+              void main() {
+                gl_Position = a_pos;
+              }
+            \`;
 
-  useEffect(() => {
-    // Orb 1 gentle floating loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb1Anim, {
-          toValue: 1,
-          duration: 9000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(orb1Anim, {
-          toValue: 0,
-          duration: 9000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+            const FRAG = \`
+              precision highp float;
+              uniform float u_time;
+              uniform vec2 u_res;
+              uniform vec3 u_core;
+              uniform bool u_showCore;
+              uniform vec3 u_mid;
+              uniform vec3 u_accent;
+              uniform vec3 u_outer;
+              uniform float u_complexity;
+              uniform float u_bright;
+              uniform float u_rotSpeed;
 
-    // Orb 2 counter floating loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orb2Anim, {
-          toValue: 1,
-          duration: 12000,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(orb2Anim, {
-          toValue: 0,
-          duration: 12000,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+              mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
 
-    // Starfield twinkle breathing pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(starPulse, {
-          toValue: 1,
-          duration: 2600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(starPulse, {
-          toValue: 0.45,
-          duration: 2600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+              float hash(vec2 p) {
+                p = fract(p * vec2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return fract(p.x * p.y);
+              }
 
-    // Periodic shooting star
-    Animated.loop(
-      Animated.sequence([
-        Animated.delay(4000),
-        Animated.timing(meteorAnim, {
-          toValue: 1,
-          duration: 1400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(meteorAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [orb1Anim, orb2Anim, starPulse, meteorAnim]);
+              float noise(vec2 p) {
+                vec2 i = floor(p); vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
+                           mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+              }
 
-  const orb1TranslateX = orb1Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-30, 40],
-  });
-  const orb1TranslateY = orb1Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 50],
-  });
+              float fbm(vec2 p) {
+                float v = 0.0, a = 0.5;
+                for (int i = 0; i < 7; i++) {
+                  v += a * noise(p); p *= rot(0.5); p *= 2.1; a *= 0.5;
+                }
+                return v;
+              }
 
-  const orb2TranslateX = orb2Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [30, -40],
-  });
-  const orb2TranslateY = orb2Anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -40],
-  });
+              void main() {
+                vec2 p = (gl_FragCoord.xy - 0.5 * u_res.xy) / min(u_res.y, u_res.x);
+                float t = u_time * 0.1;
 
-  const meteorTranslateX = meteorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-100, SCREEN_WIDTH + 100],
-  });
-  const meteorTranslateY = meteorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [50, SCREEN_HEIGHT * 0.45],
-  });
-  const meteorOpacity = meteorAnim.interpolate({
-    inputRange: [0, 0.1, 0.8, 1],
-    outputRange: [0, 1, 0.8, 0],
-  });
+                p *= rot(u_time * u_rotSpeed * 0.05);
+
+                float dist = length(p);
+
+                float angleNoise = fbm(p * 3.0 + t * 0.5) * 0.3;
+                float distortedDist = dist + angleNoise * smoothstep(0.5, 0.0, dist);
+
+                vec2 nebP = p * u_complexity;
+
+                vec2 q = vec2(fbm(nebP + vec2(cos(t), sin(t))), fbm(nebP + 1.2));
+                vec2 r = vec2(fbm(nebP + 4.0 * q + t), fbm(nebP + 4.0 * q + 2.8));
+                float f = fbm(nebP + 4.0 * r);
+
+                float coreMask = smoothstep(0.8, 0.0, distortedDist) * (0.5 + 0.5 * smoothstep(0.1, 0.9, f));
+                float coreGlow = exp(-3.0 * distortedDist);
+
+                vec3 colCore = u_showCore ? u_core * (coreMask * 2.0 + coreGlow * 1.5) : vec3(0.0);
+
+                float ring = smoothstep(0.05, 0.35, dist) * smoothstep(0.9, 0.3, dist);
+                float filament = pow(f, 1.2);
+
+                vec3 colMix = mix(u_mid, u_accent, smoothstep(0.2, 0.6, f));
+                colMix = mix(colMix, u_outer, smoothstep(0.4, 0.9, f));
+                vec3 colOuter = colMix * ring * filament * 2.0;
+
+                float dust = smoothstep(0.3, 0.9, fbm(nebP * 1.5 + r));
+                dust = mix(1.0, dust, smoothstep(0.0, 0.3, dist));
+
+                vec3 finalCol = (colCore + colOuter) * dust * u_bright;
+                finalCol += u_showCore ? u_mid * coreMask * ring * 0.8 : vec3(0.0);
+
+                float lum = max(finalCol.r, max(finalCol.g, finalCol.b));
+                gl_FragColor = vec4(finalCol, clamp(lum, 0.0, 1.0));
+              }
+            \`;
+
+            function rgbOf(hexStr) {
+              const hex = hexStr.replace('#', '');
+              return [
+                parseInt(hex.slice(0, 2), 16) / 255,
+                parseInt(hex.slice(2, 4), 16) / 255,
+                parseInt(hex.slice(4, 6), 16) / 255
+              ];
+            }
+
+            const canvas = document.getElementById('glCanvas');
+            const gl = canvas.getContext('webgl', {
+              antialias: true,
+              alpha: true,
+              depth: false,
+              premultipliedAlpha: true
+            });
+
+            function compile(gl, type, src) {
+              const s = gl.createShader(type);
+              if (!s) return null;
+              gl.shaderSource(s, src);
+              gl.compileShader(s);
+              return s;
+            }
+
+            const vs = compile(gl, gl.VERTEX_SHADER, VERT);
+            const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+            const program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.ONE, gl.ONE);
+
+            const u = {
+              time: gl.getUniformLocation(program, "u_time"),
+              res: gl.getUniformLocation(program, "u_res"),
+              core: gl.getUniformLocation(program, "u_core"),
+              showCore: gl.getUniformLocation(program, "u_showCore"),
+              mid: gl.getUniformLocation(program, "u_mid"),
+              accent: gl.getUniformLocation(program, "u_accent"),
+              outer: gl.getUniformLocation(program, "u_outer"),
+              complexity: gl.getUniformLocation(program, "u_complexity"),
+              bright: gl.getUniformLocation(program, "u_bright"),
+              rotSpeed: gl.getUniformLocation(program, "u_rotSpeed")
+            };
+            const aPos = gl.getAttribLocation(program, "a_pos");
+
+            const quadBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
+
+            function resize() {
+              const dpr = Math.min(2, window.devicePixelRatio || 1);
+              const w = Math.round(window.innerWidth * dpr);
+              const h = Math.round(window.innerHeight * dpr);
+              if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+              }
+            }
+
+            const coreRGB = rgbOf("${coreColor}");
+            const midRGB = rgbOf("${midColor}");
+            const accentRGB = rgbOf("${accentColor}");
+            const outerRGB = rgbOf("${outerColor}");
+
+            const complexityVal = 1.0 + (${detail} / 20.0) * 4.0;
+            const brightVal = (${brightness} / 100.0) * 3.0;
+            const speedVal = ${speed} / 10.0;
+            const rotVal = ${rotation} / 20.0;
+
+            const start = performance.now();
+            function render() {
+              resize();
+              const elapsed = (performance.now() - start) / 1000.0;
+              gl.viewport(0, 0, canvas.width, canvas.height);
+              gl.clearColor(0, 0, 0, 0);
+              gl.clear(gl.COLOR_BUFFER_BIT);
+              gl.useProgram(program);
+
+              gl.uniform1f(u.time, elapsed * speedVal);
+              gl.uniform2f(u.res, canvas.width, canvas.height);
+              gl.uniform3fv(u.core, coreRGB);
+              gl.uniform1i(u.showCore, ${core ? 1 : 0});
+              gl.uniform3fv(u.mid, midRGB);
+              gl.uniform3fv(u.accent, accentRGB);
+              gl.uniform3fv(u.outer, outerRGB);
+              gl.uniform1f(u.complexity, complexityVal);
+              gl.uniform1f(u.bright, brightVal);
+              gl.uniform1f(u.rotSpeed, rotVal);
+
+              gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+              gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+              gl.enableVertexAttribArray(aPos);
+              gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+              requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
+          </script>
+        </body>
+      </html>
+    `;
+  }, [core, coreColor, midColor, accentColor, outerColor, detail, brightness, speed, rotation]);
 
   return (
     <View style={styles.container}>
-      {/* Deep Space Canvas */}
-      <Svg style={StyleSheet.absoluteFill}>
-        <Defs>
-          {/* Base Midnight Sky Gradient */}
-          <SvgLinearGradient id="spaceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#040914" />
-            <Stop offset="45%" stopColor="#07172A" />
-            <Stop offset="80%" stopColor="#0A1E38" />
-            <Stop offset="100%" stopColor="#030712" />
-          </SvgLinearGradient>
+      {/* Originkit WebGL Hardware Accelerated Cosmic Canvas */}
+      <View style={styles.webglLayer} pointerEvents="none">
+        <WebView
+          originWhitelist={['*']}
+          source={{ html: htmlContent }}
+          style={styles.webView}
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          androidLayerType="hardware"
+        />
+      </View>
 
-          {/* Deep Teal Nebula Aura */}
-          <RadialGradient
-            id="nebulaTeal"
-            cx="50%"
-            cy="50%"
-            r="50%"
-            fx="50%"
-            fy="50%"
-          >
-            <Stop offset="0%" stopColor="#0F4C5C" stopOpacity="0.55" />
-            <Stop offset="60%" stopColor="#0F4C5C" stopOpacity="0.18" />
-            <Stop offset="100%" stopColor="#07172A" stopOpacity="0" />
-          </RadialGradient>
-
-          {/* Emerald Aurora Aura */}
-          <RadialGradient
-            id="nebulaEmerald"
-            cx="50%"
-            cy="50%"
-            r="50%"
-            fx="50%"
-            fy="50%"
-          >
-            <Stop offset="0%" stopColor="#10B981" stopOpacity="0.4" />
-            <Stop offset="55%" stopColor="#10B981" stopOpacity="0.1" />
-            <Stop offset="100%" stopColor="#07172A" stopOpacity="0" />
-          </RadialGradient>
-
-          {/* Celestial Coral Violet Aura */}
-          <RadialGradient
-            id="nebulaCoral"
-            cx="50%"
-            cy="50%"
-            r="50%"
-            fx="50%"
-            fy="50%"
-          >
-            <Stop offset="0%" stopColor="#E36414" stopOpacity="0.32" />
-            <Stop offset="65%" stopColor="#9333EA" stopOpacity="0.08" />
-            <Stop offset="100%" stopColor="#030712" stopOpacity="0" />
-          </RadialGradient>
-        </Defs>
-
-        {/* Base Sky Background */}
-        <Rect width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="url(#spaceGradient)" />
-
-        {/* Static Ambient Nebulae */}
-        <Circle cx={SCREEN_WIDTH * 0.85} cy={SCREEN_HEIGHT * 0.15} r={SCREEN_WIDTH * 0.55} fill="url(#nebulaCoral)" />
-        <Circle cx={SCREEN_WIDTH * 0.15} cy={SCREEN_HEIGHT * 0.5} r={SCREEN_WIDTH * 0.65} fill="url(#nebulaTeal)" />
-        <Circle cx={SCREEN_WIDTH * 0.7} cy={SCREEN_HEIGHT * 0.85} r={SCREEN_WIDTH * 0.6} fill="url(#nebulaEmerald)" />
-
-        {/* Starfield Particles */}
-        <G>
-          {STARS.map((star) => (
-            <Circle
-              key={star.id}
-              cx={star.cx}
-              cy={star.cy}
-              r={star.r}
-              fill="#FFFFFF"
-              opacity={star.opacity}
-            />
-          ))}
-        </G>
-      </Svg>
-
-      {/* Floating Animated Nebula Orb 1 (Teal Cyan Glow) */}
-      <Animated.View
-        style={[
-          styles.animatedOrb,
-          {
-            top: SCREEN_HEIGHT * 0.1,
-            left: SCREEN_WIDTH * 0.1,
-            width: 240,
-            height: 240,
-            borderRadius: 120,
-            backgroundColor: 'rgba(15, 76, 92, 0.28)',
-            transform: [{ translateX: orb1TranslateX }, { translateY: orb1TranslateY }],
-          },
-        ]}
-      />
-
-      {/* Floating Animated Nebula Orb 2 (Emerald Light) */}
-      <Animated.View
-        style={[
-          styles.animatedOrb,
-          {
-            bottom: SCREEN_HEIGHT * 0.2,
-            right: SCREEN_WIDTH * 0.05,
-            width: 260,
-            height: 260,
-            borderRadius: 130,
-            backgroundColor: 'rgba(16, 185, 129, 0.22)',
-            transform: [{ translateX: orb2TranslateX }, { translateY: orb2TranslateY }],
-          },
-        ]}
-      />
-
-      {/* Shooting Meteor Streak */}
-      <Animated.View
-        style={[
-          styles.meteorStreak,
-          {
-            transform: [
-              { translateX: meteorTranslateX },
-              { translateY: meteorTranslateY },
-              { rotate: '35deg' },
-            ],
-            opacity: meteorOpacity,
-          },
-        ]}
-      />
-
-      {/* Optional Content Overlay */}
+      {/* Children Content Layer (Passes all touches freely) */}
       {children && <View style={styles.contentOverlay}>{children}</View>}
     </View>
   );
@@ -286,20 +283,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#040914',
     overflow: 'hidden',
   },
-  animatedOrb: {
+  webglLayer: {
     position: 'absolute',
-    opacity: 0.8,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1,
   },
-  meteorStreak: {
-    position: 'absolute',
-    width: 90,
-    height: 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 1,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
+  webView: {
+    backgroundColor: '#040914',
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
   contentOverlay: {
     flex: 1,
