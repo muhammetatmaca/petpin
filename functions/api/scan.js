@@ -1,6 +1,6 @@
 /**
  * PetPin Cloudflare Worker & API Gateway
- * Handles Real-Time Scan Telemetry & Global Broadcast
+ * Handles Real-Time Scan Telemetry, Remote Push Gateway (APNs / FCM), and Global Broadcast
  */
 
 // In-memory telemetry cache on Edge (persists active scans)
@@ -93,6 +93,43 @@ export default {
           scanStore.set('GLOBAL_LATEST', scanRecord);
 
           console.log(`[Scan Saved] ${rawTagId}: ${scanRecord.address}`);
+
+          // 🔥 REMOTE PUSH NOTIFICATION (APNs / FCM via Expo Push Gateway)
+          const targetPushToken =
+            pushTokenStore.get(rawTagId) ||
+            pushTokenStore.get(rawTagId.toUpperCase()) ||
+            pushTokenStore.get(rawTagId.toLowerCase()) ||
+            null;
+
+          if (targetPushToken) {
+            try {
+              await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Accept-encoding': 'gzip, deflate',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  to: targetPushToken,
+                  sound: 'default',
+                  title: `🚨 ${scanRecord.pet_name}’nin Künyesi Okutuldu!`,
+                  body: `Bir hayvansever künyeyi okuttu. Konum: ${scanRecord.address}. Haritayı görmek için dokunun.`,
+                  data: {
+                    type: 'QR_SCAN_ALERT',
+                    tag_id: rawTagId,
+                    latitude: scanRecord.latitude,
+                    longitude: scanRecord.longitude,
+                    address: scanRecord.address,
+                  },
+                  priority: 'high',
+                  channelId: 'petpin-alerts',
+                }),
+              });
+            } catch (pushErr) {
+              console.log('Expo Remote Push Dispatch Error:', pushErr);
+            }
+          }
 
           return new Response(
             JSON.stringify({

@@ -67,7 +67,10 @@ const PetContext = createContext<PetContextType | undefined>(undefined);
 export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<PetProfile>(DEFAULT_PROFILE);
   const [activeScanAlert, setActiveScanAlert] = useState<ScanAlert | null>(null);
-  const lastProcessedScanIdRef = useRef<string | null>(null);
+
+  // Monotonic timestamp tracker: initialized to app boot time so past historical scans never alert on startup
+  const lastProcessedTimestampRef = useRef<number>(Date.now());
+  const isFirstSyncRef = useRef<boolean>(true);
 
   // Initialize notifications & load profile from storage
   useEffect(() => {
@@ -92,7 +95,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadSavedProfile();
   }, []);
 
-  // Real-time Cloud Telemetry Listener (Dual Persistent Cloud Sync)
+  // Real-time Cloud Telemetry Listener (Zero loop, Zero startup popup, Single trigger)
   useEffect(() => {
     if (!profile.tagId) return;
 
@@ -100,18 +103,21 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     async function pollLiveScans() {
       try {
-        // 1. Persistent Global Realtime Cloud Database Poll (Sub-second globally synced)
+        let latestFoundScan: ScanAlert | null = null;
+        let latestScanTime = 0;
+
+        // 1. Check Persistent Global Cloud Database
         try {
           const cloudRes = await fetch('https://api.restful-api.dev/objects/ff808181a058d43f01a05d6f12b4105d');
           const cloudObj = await cloudRes.json();
           if (cloudObj && cloudObj.data && cloudObj.data.latitude) {
             const scanData = cloudObj.data;
-            const scanUniqueKey = `${scanData.id || scanData.timestamp}_${scanData.address}`;
+            const scanTime = new Date(scanData.timestamp || Date.now()).getTime();
 
-            if (scanUniqueKey !== lastProcessedScanIdRef.current) {
-              lastProcessedScanIdRef.current = scanUniqueKey;
-              const incomingScan: ScanAlert = {
-                id: scanData.id || Date.now().toString(),
+            if (scanTime > latestScanTime) {
+              latestScanTime = scanTime;
+              latestFoundScan = {
+                id: String(scanData.id || scanTime),
                 tag_id: scanData.tag_id || profile.tagId,
                 pet_name: scanData.pet_name || profile.petName,
                 latitude: Number(scanData.latitude),
@@ -122,41 +128,45 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 timestamp: scanData.timestamp || new Date().toISOString(),
                 timeFormatted: scanData.timeFormatted || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               };
-
-              console.log('🚨 [PetContext] Real-Time Scan Received:', incomingScan.address);
-              setActiveScanAlert(incomingScan);
-              await triggerLiveScanNotification(profile.petName, incomingScan.address);
-              return;
             }
           }
         } catch {
-          // cloud poll retry
+          // silent cloud retry
         }
 
-        // 2. Cloudflare Edge API Poll Fallback
-        const urls = [
-          `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(profile.tagId)}`,
-          `https://petpin.muhammetatmaca79.workers.dev/api/scan`,
-        ];
-
-        for (const u of urls) {
-          try {
-            const res = await fetch(u);
-            const data = await res.json();
-
-            if (data && data.success && data.has_scan && data.scan) {
-              const incomingScan: ScanAlert = data.scan;
-              if (incomingScan.id && incomingScan.id !== lastProcessedScanIdRef.current) {
-                lastProcessedScanIdRef.current = incomingScan.id;
-                console.log('🚨 [PetContext] Worker Scan Received:', incomingScan.address);
-                setActiveScanAlert(incomingScan);
-                await triggerLiveScanNotification(profile.petName, incomingScan.address);
-                return;
-              }
+        // 2. Check Cloudflare Worker API Fallback
+        try {
+          const res = await fetch(`https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(profile.tagId)}`);
+          const data = await res.json();
+          if (data && data.success && data.has_scan && data.scan) {
+            const workerScan = data.scan;
+            const scanTime = new Date(workerScan.timestamp || Date.now()).getTime();
+            if (scanTime > latestScanTime) {
+              latestScanTime = scanTime;
+              latestFoundScan = workerScan;
             }
-          } catch {
-            // single url retry
           }
+        } catch {
+          // silent worker retry
+        }
+
+        // First startup sync: memorize existing historical scan time WITHOUT showing startup alert popup
+        if (isFirstSyncRef.current) {
+          isFirstSyncRef.current = false;
+          if (latestScanTime > 0) {
+            lastProcessedTimestampRef.current = latestScanTime;
+          }
+          return;
+        }
+
+        // Fresh new scan detected while app is running
+        if (latestFoundScan && latestScanTime > lastProcessedTimestampRef.current) {
+          lastProcessedTimestampRef.current = latestScanTime;
+          console.log('🚨 [PetContext] Fresh Live Scan Alert Dispatched:', latestFoundScan.address);
+
+          // Update state and trigger notification ONCE
+          setActiveScanAlert(latestFoundScan);
+          await triggerLiveScanNotification(profile.petName, latestFoundScan.address);
         }
       } catch (err) {
         // Silent network retry
@@ -166,8 +176,8 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Immediate check on mount
     pollLiveScans();
 
-    // Poll every 2 seconds for instant detection
-    const interval = setInterval(pollLiveScans, 2000);
+    // Poll every 2.5 seconds
+    const interval = setInterval(pollLiveScans, 2500);
 
     return () => {
       clearInterval(interval);
