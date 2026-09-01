@@ -20,6 +20,7 @@ import {
   Sparkles,
   Clock,
   Crosshair,
+  AlertTriangle,
 } from 'lucide-react-native';
 import { InteractiveMap } from '../components/InteractiveMap';
 import { usePet } from '../context/PetContext';
@@ -38,7 +39,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onProfilePress,
   onAlertPress,
 }) => {
-  const { profile } = usePet();
+  const { profile, activeScanAlert } = usePet();
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [currentAddress, setCurrentAddress] = useState<string>('Konum alınıyor...');
@@ -47,11 +48,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     longitude: 29.0345,
   });
 
+  // Sync petLocation to activeScanAlert if available
+  useEffect(() => {
+    if (activeScanAlert) {
+      setPetLocation({
+        latitude: activeScanAlert.latitude,
+        longitude: activeScanAlert.longitude,
+      });
+      setCurrentAddress(activeScanAlert.address);
+    }
+  }, [activeScanAlert]);
+
   // Fetch real device GPS coordinates on mount
   useEffect(() => {
     let isMounted = true;
 
     async function initLiveLocation() {
+      if (activeScanAlert) {
+        setLoadingLocation(false);
+        return;
+      }
+
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
@@ -100,16 +117,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeScanAlert]);
 
   const handleToggleMapType = () => {
     setMapType((prev) => (prev === 'standard' ? 'satellite' : 'standard'));
   };
 
   const handleCenterOnPet = () => {
-    // Re-trigger location refresh or center
-    setPetLocation((prev) => ({ ...prev }));
+    if (activeScanAlert) {
+      setPetLocation({
+        latitude: activeScanAlert.latitude,
+        longitude: activeScanAlert.longitude,
+      });
+    } else {
+      setPetLocation((prev) => ({ ...prev }));
+    }
   };
+
+  const isAlertState = activeScanAlert !== null || profile.isLostMode;
 
   return (
     <View style={styles.container}>
@@ -118,10 +143,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <InteractiveMap
           latitude={petLocation.latitude}
           longitude={petLocation.longitude}
-          zoom={15}
+          zoom={16}
           mapType={mapType}
-          lostMode={profile.isLostMode}
-          onMarkerPress={onProfilePress}
+          lostMode={isAlertState}
+          onMarkerPress={activeScanAlert ? onAlertPress : onProfilePress}
         />
       </View>
 
@@ -129,9 +154,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <View style={styles.topHeader}>
         <View style={styles.brandBadge}>
           <Text style={styles.brandTitle}>PetPin</Text>
-          <View style={styles.liveDotContainer}>
-            <Sparkles size={12} color={COLORS.emerald} style={{ marginRight: 4 }} />
-            <Text style={styles.liveText}>CANLI HARİTA</Text>
+          <View style={[styles.liveDotContainer, activeScanAlert && { backgroundColor: COLORS.coralLight }]}>
+            <Sparkles size={12} color={activeScanAlert ? COLORS.coral : COLORS.emerald} style={{ marginRight: 4 }} />
+            <Text style={[styles.liveText, activeScanAlert && { color: COLORS.coral }]}>
+              {activeScanAlert ? 'TARAMA ALINDI' : 'CANLI HARİTA'}
+            </Text>
           </View>
         </View>
 
@@ -141,8 +168,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onPress={onAlertPress}
             activeOpacity={0.8}
           >
-            <Bell size={20} color={COLORS.primary} />
-            <View style={styles.notificationDot} />
+            <Bell size={20} color={activeScanAlert ? COLORS.coral : COLORS.primary} />
+            {activeScanAlert && <View style={styles.notificationDot} />}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.glassIconButton}
@@ -183,9 +210,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* Floating Glass Bottom Sheet for Pet & Tag Status */}
       <TouchableOpacity
-        style={styles.glassCardSheet}
+        style={[styles.glassCardSheet, activeScanAlert && styles.alertCardSheet]}
         activeOpacity={0.95}
-        onPress={onProfilePress}
+        onPress={activeScanAlert ? onAlertPress : onProfilePress}
       >
         <View style={styles.cardHeaderHandle} />
 
@@ -200,7 +227,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <View
               style={[
                 styles.onlineBadge,
-                profile.isLostMode && { backgroundColor: COLORS.coral },
+                isAlertState && { backgroundColor: COLORS.coral },
               ]}
             />
           </View>
@@ -212,27 +239,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <View
                 style={[
                   styles.safeStatusPill,
-                  profile.isLostMode && styles.lostStatusPill,
+                  isAlertState && styles.lostStatusPill,
                 ]}
               >
                 <Text
                   style={[
                     styles.safeStatusText,
-                    profile.isLostMode && styles.lostStatusText,
+                    isAlertState && styles.lostStatusText,
                   ]}
                 >
-                  {profile.isLostMode ? 'Kayıp Modu Aktif' : 'Güvende'}
+                  {activeScanAlert
+                    ? '📍 Künye Okutuldu!'
+                    : profile.isLostMode
+                    ? 'Kayıp Modu Aktif'
+                    : 'Güvende'}
                 </Text>
               </View>
             </View>
 
             {/* Real Street Address */}
             <View style={styles.addressRow}>
-              <MapPin size={12} color={COLORS.textSecondary} style={{ marginRight: 4 }} />
+              <MapPin size={12} color={activeScanAlert ? COLORS.coral : COLORS.textSecondary} style={{ marginRight: 4 }} />
               {loadingLocation ? (
                 <ActivityIndicator size="small" color={COLORS.primary} />
               ) : (
-                <Text style={styles.addressText} numberOfLines={1}>
+                <Text style={[styles.addressText, activeScanAlert && { color: '#0F172A', fontWeight: '700' }]} numberOfLines={1}>
                   {currentAddress}
                 </Text>
               )}
@@ -240,9 +271,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {/* Tag State Info */}
             <View style={styles.telemetryRow}>
-              <View style={styles.tagPill}>
-                <ShieldCheck size={12} color={COLORS.primary} />
-                <Text style={styles.tagPillText}>QR Künye Aktif • Milo Güvende</Text>
+              <View style={[styles.tagPill, activeScanAlert && { backgroundColor: COLORS.coralLight }]}>
+                {activeScanAlert ? (
+                  <>
+                    <Clock size={12} color={COLORS.coral} />
+                    <Text style={[styles.tagPillText, { color: COLORS.coral }]}>
+                      Okutulma: {activeScanAlert.timeFormatted}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={12} color={COLORS.primary} />
+                    <Text style={styles.tagPillText}>QR Künye Aktif • Dinleniyor</Text>
+                  </>
+                )}
               </View>
             </View>
           </View>
@@ -250,17 +292,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* Informative Tag Action Banner */}
         <TouchableOpacity
-          style={styles.infoBanner}
+          style={[styles.infoBanner, activeScanAlert && { backgroundColor: COLORS.coralLight, borderColor: COLORS.coralBorder }]}
           activeOpacity={0.8}
-          onPress={onTagPress}
+          onPress={activeScanAlert ? onAlertPress : onTagPress}
         >
           <View style={styles.infoIconWrapper}>
-            <QrCode size={16} color={COLORS.primary} />
+            {activeScanAlert ? (
+              <AlertTriangle size={16} color={COLORS.coral} />
+            ) : (
+              <QrCode size={16} color={COLORS.primary} />
+            )}
           </View>
-          <Text style={styles.infoBannerText}>
-            Künyem: Milo'nun QR kodunu ve bulan kişinin gördüğü ekranı yönet
+          <Text style={[styles.infoBannerText, activeScanAlert && { color: COLORS.coral, fontWeight: '700' }]}>
+            {activeScanAlert
+              ? 'Bulan kişinin konumunu ve detaylarını gör ➔'
+              : 'Künyem: Milo’nun QR kodunu ve bulan kişinin ekranını yönet'}
           </Text>
-          <Sparkles size={14} color={COLORS.emerald} style={{ marginLeft: 4 }} />
+          <Sparkles size={14} color={activeScanAlert ? COLORS.coral : COLORS.emerald} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </TouchableOpacity>
     </View>
@@ -277,9 +325,9 @@ const styles = StyleSheet.create({
   },
   topHeader: {
     position: 'absolute',
-    top: 18,
-    left: 16,
-    right: 16,
+    top: 50,
+    left: 20,
+    right: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -289,33 +337,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.cardGlass,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: COLORS.borderGlass,
     ...SHADOWS.subtle,
   },
   brandTitle: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
-    letterSpacing: -0.7,
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: -0.5,
     marginRight: 10,
   },
   liveDotContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.textPrimary,
+    backgroundColor: COLORS.emeraldLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
   },
   liveText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
-    color: COLORS.white,
-    letterSpacing: 0.7,
+    color: COLORS.emerald,
+    letterSpacing: 0.5,
   },
   headerActionRow: {
     flexDirection: 'row',
@@ -346,15 +394,15 @@ const styles = StyleSheet.create({
   },
   mapToolGroup: {
     position: 'absolute',
-    right: 16,
-    top: 92,
+    right: 20,
+    top: 130,
     gap: 10,
     zIndex: 10,
   },
   toolButton: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 22,
     backgroundColor: COLORS.cardGlass,
     alignItems: 'center',
     justifyContent: 'center',
@@ -364,23 +412,28 @@ const styles = StyleSheet.create({
   },
   glassCardSheet: {
     position: 'absolute',
-    bottom: 92,
-    left: 16,
-    right: 16,
+    bottom: 96,
+    left: 18,
+    right: 18,
     backgroundColor: COLORS.cardGlass,
-    borderRadius: 20,
+    borderRadius: 28,
     padding: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     borderWidth: 1,
     borderColor: COLORS.borderGlass,
     ...SHADOWS.card,
     zIndex: 10,
   },
+  alertCardSheet: {
+    borderColor: COLORS.coralBorder,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+  },
   cardHeaderHandle: {
-    width: 30,
-    height: 3,
+    width: 36,
+    height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: '#CBD5E1',
     alignSelf: 'center',
     marginBottom: 10,
   },
@@ -420,8 +473,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   petName: {
-    fontSize: 21,
-    fontWeight: '900',
+    fontSize: 20,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     letterSpacing: -0.3,
   },
@@ -429,7 +482,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.emeraldLight,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.emeraldBorder,
   },
@@ -479,7 +532,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(15, 76, 92, 0.05)',
     padding: 10,
-    borderRadius: 12,
+    borderRadius: 14,
     marginTop: 12,
     borderWidth: 1,
     borderColor: 'rgba(15, 76, 92, 0.1)',

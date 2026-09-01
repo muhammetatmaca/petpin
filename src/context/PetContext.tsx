@@ -1,7 +1,21 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { generateUniqueTagId } from '../utils/tagGenerator';
+import { setupNotificationPermissions, triggerLiveScanNotification } from '../services/notificationService';
+
+export interface ScanAlert {
+  id: string;
+  tag_id: string;
+  pet_name: string;
+  latitude: number;
+  longitude: number;
+  accuracy: string;
+  address: string;
+  device: string;
+  timestamp: string;
+  timeFormatted: string;
+}
 
 export interface PetProfile {
   petName: string;
@@ -35,19 +49,26 @@ const STORAGE_KEY = '@petpin_profile_v1';
 
 interface PetContextType {
   profile: PetProfile;
+  activeScanAlert: ScanAlert | null;
   updateProfile: (updates: Partial<PetProfile>) => Promise<void>;
   pickPetPhoto: () => Promise<void>;
   toggleLostMode: () => Promise<void>;
   regenerateTagId: () => Promise<string>;
   pairPhysicalTag: (newTagId: string) => Promise<void>;
+  clearActiveScanAlert: () => void;
 }
 
 const PetContext = createContext<PetContextType | undefined>(undefined);
 
 export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<PetProfile>(DEFAULT_PROFILE);
+  const [activeScanAlert, setActiveScanAlert] = useState<ScanAlert | null>(null);
+  const lastProcessedScanIdRef = useRef<string | null>(null);
 
+  // Initialize notifications & load profile from storage
   useEffect(() => {
+    setupNotificationPermissions();
+
     async function loadSavedProfile() {
       try {
         if (AsyncStorage && AsyncStorage.getItem) {
@@ -66,6 +87,53 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     loadSavedProfile();
   }, []);
+
+  // Real-time Cloud Telemetry Listener: Polls Cloudflare Edge for live scans on this tag
+  useEffect(() => {
+    if (!profile.tagId) return;
+
+    let isPolling = true;
+
+    async function pollLiveScans() {
+      try {
+        const res = await fetch(
+          `https://petpin.muhammetatmaca79.workers.dev/api/scan?tag_id=${encodeURIComponent(
+            profile.tagId
+          )}`
+        );
+        const data = await res.json();
+
+        if (data && data.success && data.has_scan && data.scan) {
+          const incomingScan: ScanAlert = data.scan;
+
+          // Check if this is a new scan we haven't processed yet
+          if (incomingScan.id !== lastProcessedScanIdRef.current) {
+            lastProcessedScanIdRef.current = incomingScan.id;
+            setActiveScanAlert(incomingScan);
+
+            // Trigger instant native sound & push notification
+            await triggerLiveScanNotification(
+              profile.petName,
+              incomingScan.address
+            );
+          }
+        }
+      } catch (err) {
+        // Silent network retry
+      }
+    }
+
+    // Immediate check
+    pollLiveScans();
+
+    // Poll every 3.5 seconds
+    const interval = setInterval(pollLiveScans, 3500);
+
+    return () => {
+      isPolling = false;
+      clearInterval(interval);
+    };
+  }, [profile.tagId, profile.petName]);
 
   const updateProfile = async (updates: Partial<PetProfile>) => {
     try {
@@ -96,6 +164,10 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const clearActiveScanAlert = () => {
+    setActiveScanAlert(null);
+  };
+
   const pickPetPhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,11 +195,13 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <PetContext.Provider
       value={{
         profile,
+        activeScanAlert,
         updateProfile,
         pickPetPhoto,
         toggleLostMode,
         regenerateTagId,
         pairPhysicalTag,
+        clearActiveScanAlert,
       }}
     >
       {children}

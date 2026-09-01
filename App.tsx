@@ -12,7 +12,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { Map, User, QrCode, Bell } from 'lucide-react-native';
-import { PetProvider } from './src/context/PetContext';
+import { PetProvider, usePet } from './src/context/PetContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TagScreen } from './src/screens/TagScreen';
@@ -20,6 +20,7 @@ import { AlertScreen } from './src/screens/AlertScreen';
 import { COLORS, SHADOWS } from './src/theme/colors';
 
 function MainApp() {
+  const { activeScanAlert } = usePet();
   const [activeTab, setActiveTab] = useState<'map' | 'tag' | 'alert' | 'profile'>('map');
   const insets = useSafeAreaInsets();
 
@@ -137,6 +138,9 @@ function MainApp() {
                   activeTab === 'alert' ? '#FFFFFF' : COLORS.textSecondary
                 }
               />
+              {activeScanAlert && activeTab !== 'alert' && (
+                <View style={styles.alertDot} />
+              )}
             </View>
             <Text
               style={[
@@ -241,6 +245,17 @@ const styles = StyleSheet.create({
   tabIconBadgeActiveAlert: {
     backgroundColor: COLORS.coral,
     ...SHADOWS.alert,
+  },
+  alertDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.coral,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   tabLabel: {
     fontSize: 11,

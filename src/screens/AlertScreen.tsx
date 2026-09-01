@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Linking,
-  Dimensions,
 } from 'react-native';
 import {
   ChevronLeft,
@@ -15,26 +14,14 @@ import {
   Clock,
   MapPin,
   Smartphone,
-  CheckCircle2,
-  Share2,
   Sparkles,
   ShieldCheck,
   Trash2,
   Info,
 } from 'lucide-react-native';
 import { InteractiveMap } from '../components/InteractiveMap';
+import { usePet } from '../context/PetContext';
 import { COLORS, SHADOWS } from '../theme/colors';
-
-interface ScanAlert {
-  id: string;
-  timestamp: string;
-  timeAgo: string;
-  latitude: number;
-  longitude: number;
-  address: string;
-  device: string;
-  accuracy: string;
-}
 
 interface AlertScreenProps {
   onBackPress: () => void;
@@ -45,21 +32,18 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
   onBackPress,
   onNavigatePress,
 }) => {
-  // Starts clean with no fake alerts
-  const [activeAlert, setActiveAlert] = useState<ScanAlert | null>(null);
-
-  const handleClearAlert = () => {
-    setActiveAlert(null);
-  };
+  const { profile, activeScanAlert, clearActiveScanAlert } = usePet();
 
   const handleCallFinder = () => {
-    Linking.openURL('tel:+905552345678');
+    if (profile.ownerPhone) {
+      Linking.openURL(`tel:${profile.ownerPhone.replace(/\s+/g, '')}`);
+    }
   };
 
   const handleOpenDirections = () => {
-    if (activeAlert) {
+    if (activeScanAlert) {
       Linking.openURL(
-        `https://maps.google.com/?q=${activeAlert.latitude},${activeAlert.longitude}`
+        `https://maps.google.com/?q=${activeScanAlert.latitude},${activeScanAlert.longitude}`
       );
     } else if (onNavigatePress) {
       onNavigatePress();
@@ -78,10 +62,10 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
           <ChevronLeft size={24} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tarama Bildirimleri</Text>
-        {activeAlert ? (
+        {activeScanAlert ? (
           <TouchableOpacity
             style={styles.backButton}
-            onPress={handleClearAlert}
+            onPress={clearActiveScanAlert}
             activeOpacity={0.8}
           >
             <Trash2 size={20} color={COLORS.coral} />
@@ -96,7 +80,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* CASE 1: NO ALERTS (Clean, Reassuring Empty State) */}
-        {!activeAlert && (
+        {!activeScanAlert && (
           <View style={styles.emptyStateContainer}>
             <View style={styles.emptyIconCircle}>
               <ShieldCheck size={48} color={COLORS.emerald} />
@@ -105,7 +89,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
 
             <Text style={styles.emptyTitle}>Henüz Tarama Bildirimi Yok</Text>
             <Text style={styles.emptySubtitle}>
-              Milo güvende! Tasmasındaki QR künye birisi tarafından telefon kamerasıyla okutulduğunda anlık GPS konumu ve bildirim anında buraya düşecektir.
+              {profile.petName} güvende! Tasmasındaki QR künye birisi tarafından telefon kamerasıyla okutulduğunda anlık GPS konumu ve bildirim anında buraya düşecektir.
             </Text>
 
             <View style={styles.statusLivePill}>
@@ -141,8 +125,8 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
           </View>
         )}
 
-        {/* CASE 2: ACTIVE SCAN ALERT */}
-        {activeAlert && (
+        {/* CASE 2: REAL-TIME ACTIVE SCAN ALERT */}
+        {activeScanAlert && (
           <View>
             {/* High-Contrast QR Scanned Alert Card */}
             <View style={styles.alertBannerCard}>
@@ -152,7 +136,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
               <View style={styles.alertBannerTextWrapper}>
                 <Text style={styles.alertTitle}>Künye Okutuldu! 📍</Text>
                 <Text style={styles.alertDescription}>
-                  Milo’nun tasmasındaki QR kod okutuldu ve okutan kişinin anlık GPS konumu size iletildi.
+                  {profile.petName}’nin tasmasındaki QR kod okutuldu ve okutan kişinin anlık GPS konumu size iletildi.
                 </Text>
               </View>
             </View>
@@ -163,14 +147,14 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
                 <Clock size={16} color={COLORS.textSecondary} />
                 <Text style={styles.metricLabel}>Tarama Zamanı</Text>
                 <Text style={styles.metricValue}>
-                  {activeAlert.timeAgo} ({activeAlert.timestamp})
+                  {activeScanAlert.timeFormatted || 'Az önce'}
                 </Text>
               </View>
               <View style={styles.metricCard}>
                 <Smartphone size={16} color={COLORS.primary} />
                 <Text style={styles.metricLabel}>Tarayıcı Cihaz</Text>
-                <Text style={[styles.metricValue, { color: COLORS.primary }]}>
-                  {activeAlert.device}
+                <Text style={[styles.metricValue, { color: COLORS.primary }]} numberOfLines={1}>
+                  {activeScanAlert.device}
                 </Text>
               </View>
             </View>
@@ -181,7 +165,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
                 <Text style={styles.mapSnippetHeader}>Okutulan GPS Noktası</Text>
                 <View style={styles.gpsAccuracyPill}>
                   <Text style={styles.gpsAccuracyText}>
-                    Hassasiyet: {activeAlert.accuracy}
+                    Hassasiyet: {activeScanAlert.accuracy}
                   </Text>
                 </View>
               </View>
@@ -189,8 +173,8 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
               {/* Zero API Key Map View Snippet */}
               <View style={styles.mapSnippetCanvas}>
                 <InteractiveMap
-                  latitude={activeAlert.latitude}
-                  longitude={activeAlert.longitude}
+                  latitude={activeScanAlert.latitude}
+                  longitude={activeScanAlert.longitude}
                   zoom={16}
                   interactive={true}
                   lostMode={true}
@@ -199,10 +183,10 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
 
               {/* Coordinate & Address Footer */}
               <View style={styles.coordFooter}>
-                <Text style={styles.addressBold}>{activeAlert.address}</Text>
+                <Text style={styles.addressBold}>{activeScanAlert.address}</Text>
                 <Text style={styles.coordText}>
-                  GPS: {activeAlert.latitude.toFixed(4)}° K,{' '}
-                  {activeAlert.longitude.toFixed(4)}° D
+                  GPS: {activeScanAlert.latitude.toFixed(4)}° K,{' '}
+                  {activeScanAlert.longitude.toFixed(4)}° D
                 </Text>
               </View>
             </View>
@@ -244,7 +228,7 @@ export const AlertScreen: React.FC<AlertScreenProps> = ({
             <TouchableOpacity
               style={styles.clearAlertBtn}
               activeOpacity={0.8}
-              onPress={handleClearAlert}
+              onPress={clearActiveScanAlert}
             >
               <Text style={styles.clearAlertBtnText}>
                 Bildirimi Temizle (Milo Güvende)
